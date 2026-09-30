@@ -23,6 +23,12 @@ export async function validatePackageVersions(root = repositoryRoot) {
   const version = cargo.match(/^version = "([^"]+)"$/m)?.[1];
   if (!version) throw new Error("Cargo.toml package version was not found");
 
+  const lock = await readFile(path.join(root, "Cargo.lock"), "utf8");
+  const lockVersion = lock.match(/\[\[package\]\]\s+name = "storymesh"\s+version = "([^"]+)"/)?.[1];
+  if (lockVersion !== version) {
+    throw new Error(`Cargo.lock storymesh version ${lockVersion ?? "missing"} does not match Cargo version ${version}`);
+  }
+
   const cli = await readJson(path.join(root, "npm/storymesh/package.json"));
   if (cli.version !== version) {
     throw new Error(`npm/storymesh version ${cli.version} does not match Cargo version ${version}`);

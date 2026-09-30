@@ -5,7 +5,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Inoue416/storymesh.git"
+    "url": "git+https://github.com/y2o-lab/storymesh.git"
   },
   "os": [
     "darwin"

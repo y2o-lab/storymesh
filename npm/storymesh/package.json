@@ -5,10 +5,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Inoue416/storymesh.git"
+    "url": "git+https://github.com/y2o-lab/storymesh.git"
   },
-  "homepage": "https://github.com/Inoue416/storymesh#readme",
-  "bugs": "https://github.com/Inoue416/storymesh/issues",
+  "homepage": "https://github.com/y2o-lab/storymesh#readme",
+  "bugs": "https://github.com/y2o-lab/storymesh/issues",
   "bin": {
     "storymesh": "bin/storymesh.cjs"
   },

@@ -3,6 +3,7 @@
 import { chmod, cp, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { distTagForVersion } from "./npm-release-version.mjs";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -22,6 +23,13 @@ export async function validatePackageVersions(root = repositoryRoot) {
   const cargo = await readFile(path.join(root, "Cargo.toml"), "utf8");
   const version = cargo.match(/^version = "([^"]+)"$/m)?.[1];
   if (!version) throw new Error("Cargo.toml package version was not found");
+  distTagForVersion(version);
+
+  const lock = await readFile(path.join(root, "Cargo.lock"), "utf8");
+  const lockVersion = lock.match(/\[\[package\]\]\s+name = "storymesh"\s+version = "([^"]+)"/)?.[1];
+  if (lockVersion !== version) {
+    throw new Error(`Cargo.lock storymesh version ${lockVersion ?? "missing"} does not match Cargo version ${version}`);
+  }
 
   const cli = await readJson(path.join(root, "npm/storymesh/package.json"));
   if (cli.version !== version) {

@@ -3,6 +3,7 @@
 import { spawnSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { distTagForVersion } from "./npm-release-version.mjs";
 
 const root = path.resolve(process.argv[2] ?? "");
 if (!process.argv[2]) {
@@ -11,6 +12,7 @@ if (!process.argv[2]) {
 }
 
 const { version, directories } = JSON.parse(await readFile(path.join(root, "packages.json"), "utf8"));
+const distTag = distTagForVersion(version);
 
 for (const directory of directories) {
   const manifest = JSON.parse(await readFile(path.join(root, directory, "package.json"), "utf8"));
@@ -26,7 +28,9 @@ for (const directory of directories) {
     throw new Error(`could not check ${spec}: ${existing.stderr || existing.stdout}`);
   }
 
-  console.log(`Publishing ${spec}...`);
-  const published = spawnSync("npm", ["publish", path.join(root, directory)], { stdio: "inherit" });
+  console.log(`Publishing ${spec} with npm dist-tag ${distTag}...`);
+  const published = spawnSync("npm", ["publish", path.join(root, directory), "--tag", distTag], {
+    stdio: "inherit",
+  });
   if (published.status !== 0) throw new Error(`npm publish failed for ${spec}`);
 }

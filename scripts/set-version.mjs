@@ -4,10 +4,17 @@ import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { platformPackages } from "./npm-packages.mjs";
+import { distTagForVersion } from "./npm-release-version.mjs";
 
 const version = process.argv[2];
-if (!version || !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(version)) {
-  console.error("usage: scripts/set-version.mjs MAJOR.MINOR.PATCH[-PRERELEASE]");
+if (!version) {
+  console.error("usage: scripts/set-version.mjs X.Y.Z[-{alpha|beta|rc|canary}.N]");
+  process.exit(2);
+}
+try {
+  distTagForVersion(version);
+} catch (error) {
+  console.error(error.message);
   process.exit(2);
 }
 

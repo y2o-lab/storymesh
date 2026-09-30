@@ -10,6 +10,8 @@ coverage. Keep changes small, observable, and reversible.
 - `README.md`: supported behavior and user-facing commands.
 - `Cargo.toml`: Rust/toolchain and dependency constraints.
 - `mise.toml`: canonical development and verification commands.
+- `.agents/skills/storymesh-npm-release/SKILL.md`: npm version selection and release workflow.
+- `docs/npm-publishing.md`: maintainer-facing npm publication steps.
 - Existing code and tests: current behavior. Do not invent requirements when the
   repository can answer the question.
 

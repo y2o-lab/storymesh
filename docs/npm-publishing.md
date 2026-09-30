@@ -11,6 +11,14 @@
 | `storymesh-linux-x64` | glibc Linux x64 |
 | `storymesh-win32-x64` | Windows x64 |
 
+## バージョンの決め方
+
+バージョンはタグから自動生成しません。公開する人が `MAJOR.MINOR.PATCH` を決め、`node scripts/set-version.mjs X.Y.Z` で Cargo と6つの npm package を一括更新します。判断の目安は [Semantic Versioning](https://semver.org/) に従い、互換性を保つ不具合修正なら patch（`0.1.0` → `0.1.1`）、機能追加なら minor（`0.1.0` → `0.2.0`）、`1.0.0` 以降の互換性を壊す変更なら major を上げます。`0.x` は開発段階で、安定した互換性は保証しません。安定した利用者向けの仕様を定める際に `1.0.0` を選びます。
+
+Git タグは `vX.Y.Z` とします。例えば `v0.2.0` の push で公開するには、タグが指す commit の `Cargo.toml`、`Cargo.lock`、6つの `package.json` と optional dependencies がすべて `0.2.0` である必要があります。一致しない場合、workflow は公開前に失敗します。公開済みのバージョンは上書きできないため、内容を変更するリリースには新しいバージョンを使います。
+
+現在の公開スクリプトは npm dist-tag を指定しないため、`npm publish` は `latest` を付けます。[npm の dist-tag 説明](https://docs.npmjs.com/adding-dist-tags-to-packages/) に従い、`0.2.0-beta.1` などの先行版を公開したい場合は、先に6 package すべてに適切な dist-tag を設定するよう公開スクリプトを変更してください。
+
 ## 初回公開前の準備
 
 1. [npm](https://www.npmjs.com/) のアカウントで2要素認証を有効にし、ローカルで `npm login` を実行します。
@@ -25,7 +33,7 @@
 現在の `0.1.0` を初回公開する場合はバージョン更新を省略できます。別のバージョンにする場合は次を実行します。
 
 ```sh
-node scripts/set-version.mjs 0.1.0
+node scripts/set-version.mjs X.Y.Z
 mise run verify
 ```
 
@@ -51,7 +59,7 @@ node scripts/publish-npm-packages.mjs release-npm
 
 公開後、npm の6つの package すべてで Settings → Trusted publishing を開き、同じ GitHub Actions publisher を設定します。
 
-- Organization or user: `Inoue416`
+- Organization or user: `y2o-lab`
 - Repository: `storymesh`
 - Workflow filename: `release.yml`
 - Environment name: `npm`

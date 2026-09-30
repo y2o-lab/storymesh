@@ -1,10 +1,16 @@
 use std::io::{self, Write};
 
-use storymesh::{CoverageReport, ScanOptions, generate_story_skeletons, scan_with_options};
+use storymesh::{
+    CoverageReport, ScanOptions, check_spec, generate_story_skeletons, import, init,
+    scan_with_options,
+};
 
 use super::{
-    args::{CheckArgs, Cli, Command, ScanArgs},
-    output::{print_check, print_coverage, print_generated, print_report},
+    args::{CheckArgs, Cli, Command, ScanArgs, SpecArgs, SpecCommand},
+    output::{
+        print_check, print_coverage, print_generated, print_report, print_spec_check,
+        print_spec_generation,
+    },
 };
 
 pub(crate) fn run(cli: Cli, stdout: &mut dyn Write, stderr: &mut dyn Write) -> u8 {
@@ -12,6 +18,7 @@ pub(crate) fn run(cli: Cli, stdout: &mut dyn Write, stderr: &mut dyn Write) -> u
         Some(Command::Check(args)) => execute_check(args, stdout, stderr),
         Some(Command::Coverage(args)) => execute(args, stdout, stderr, print_coverage),
         Some(Command::Report(args)) => execute(args, stdout, stderr, print_report),
+        Some(Command::Spec(args)) => execute_spec(args, stdout, stderr),
         None => {
             if writeln!(stdout, "Run `storymesh --help` to see available commands.").is_err() {
                 return 2;
@@ -83,5 +90,49 @@ fn scan_options(args: &ScanArgs) -> ScanOptions {
     ScanOptions {
         ignore_patterns: args.ignore.clone(),
         ignore_files: args.ignore_file.clone(),
+    }
+}
+
+fn execute_spec(args: SpecArgs, stdout: &mut dyn Write, stderr: &mut dyn Write) -> u8 {
+    match args.command {
+        SpecCommand::Check(args) => match check_spec(&args.spec_dir, &args.index) {
+            Ok(result) => print_spec_check(&result, stdout).unwrap_or_else(|e| {
+                let _ = writeln!(stderr, "failed to write output: {e}");
+                2
+            }),
+            Err(e) => {
+                let _ = writeln!(stderr, "error: {e}");
+                2
+            }
+        },
+        SpecCommand::Init(args) => match init(
+            &args.path,
+            args.framework.into(),
+            &args.spec_dir,
+            args.with_stories,
+        ) {
+            Ok(result) => print_spec_generation(&result, stdout)
+                .map(|_| 0)
+                .unwrap_or_else(|e| {
+                    let _ = writeln!(stderr, "failed to write output: {e}");
+                    2
+                }),
+            Err(e) => {
+                let _ = writeln!(stderr, "error: {e}");
+                2
+            }
+        },
+        SpecCommand::Import(args) => match import(&args.index, &args.spec_dir, args.merge) {
+            Ok(result) => print_spec_generation(&result, stdout)
+                .map(|_| 0)
+                .unwrap_or_else(|e| {
+                    let _ = writeln!(stderr, "failed to write output: {e}");
+                    2
+                }),
+            Err(e) => {
+                let _ = writeln!(stderr, "error: {e}");
+                2
+            }
+        },
     }
 }

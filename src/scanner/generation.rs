@@ -88,7 +88,7 @@ pub fn generate_story_skeletons(
     Ok(skeletons.into_iter().map(|(path, _)| path).collect())
 }
 
-fn story_skeleton(
+pub(crate) fn story_skeleton(
     root: &Path,
     component: &Path,
     framework: Framework,
@@ -257,7 +257,7 @@ fn javascript_identifiers(source: &[u8]) -> Vec<&[u8]> {
     identifiers
 }
 
-fn component_title(component: &Path, stem: &str) -> String {
+pub(crate) fn component_title(component: &Path, stem: &str) -> String {
     let name = if stem == "index" {
         component_name(component)
     } else {
@@ -266,7 +266,7 @@ fn component_title(component: &Path, stem: &str) -> String {
     format!("Components/{name}")
 }
 
-fn component_name(component: &Path) -> &str {
+pub(crate) fn component_name(component: &Path) -> &str {
     let stem = component
         .file_stem()
         .and_then(|stem| stem.to_str())

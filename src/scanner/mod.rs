@@ -12,6 +12,7 @@ use crate::domain::{ComponentCoverage, CoverageReport, Framework};
 
 pub use filesystem::ScanError;
 pub use generation::{GenerateError, generate_story_skeletons};
+pub(crate) use generation::{component_name, component_title, story_skeleton};
 
 /// Additional rules used to exclude files from a scan.
 #[derive(Clone, Debug, Default)]

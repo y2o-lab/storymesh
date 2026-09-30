@@ -27,6 +27,16 @@ fn index(entries: &str) -> String {
 }
 
 #[test]
+fn init_requires_framework_before_creating_files() {
+    let p = TestProject::new();
+    p.add_with_contents("Button.tsx", "export default function Button() {}\n");
+    let out = run(&p, &["spec", "init", "--spec-dir", "specs"]);
+    assert_eq!(out.status.code(), Some(2));
+    assert!(stderr(&out).contains("--framework"));
+    assert!(!p.root.join("specs").exists());
+}
+
+#[test]
 fn check_reports_missing_and_warning_in_stable_order() {
     let p = TestProject::new();
     p.add_with_contents(
@@ -131,11 +141,33 @@ fn init_creates_draft_and_with_stories_creates_matching_pair() {
     let root = root.to_str().unwrap();
     let spec_dir = p.root.join("specs");
     let spec_dir = spec_dir.to_str().unwrap();
-    let out = run(&p, &["spec", "init", root, "--spec-dir", spec_dir]);
+    let out = run(
+        &p,
+        &[
+            "spec",
+            "init",
+            root,
+            "--framework",
+            "react",
+            "--spec-dir",
+            spec_dir,
+        ],
+    );
     assert_eq!(out.status.code(), Some(0), "{}", stderr(&out));
     let draft = fs::read_to_string(p.root.join("specs/Button.yaml")).unwrap();
     assert!(draft.contains("stories: []"));
-    let again = run(&p, &["spec", "init", root, "--spec-dir", spec_dir]);
+    let again = run(
+        &p,
+        &[
+            "spec",
+            "init",
+            root,
+            "--framework",
+            "react",
+            "--spec-dir",
+            spec_dir,
+        ],
+    );
     assert_eq!(again.status.code(), Some(0), "{}", stderr(&again));
     assert!(stdout(&again).contains("Skipped 1"));
     p.add_with_contents("index.json", &index("\"a\":{\"id\":\"a\",\"type\":\"story\",\"title\":\"Components/Button\",\"name\":\"Default\"}"));
@@ -160,7 +192,16 @@ fn init_creates_draft_and_with_stories_creates_matching_pair() {
     let dir = dir.to_str().unwrap();
     let made = run(
         &q,
-        &["spec", "init", path, "--spec-dir", dir, "--with-stories"],
+        &[
+            "spec",
+            "init",
+            path,
+            "--framework",
+            "react",
+            "--spec-dir",
+            dir,
+            "--with-stories",
+        ],
     );
     assert_eq!(made.status.code(), Some(0), "{}", stderr(&made));
     assert!(q.root.join("Button.stories.tsx").exists());
@@ -344,6 +385,8 @@ fn init_with_existing_story_keeps_it_and_creates_a_draft() {
             "spec",
             "init",
             p.root.to_str().unwrap(),
+            "--framework",
+            "react",
             "--spec-dir",
             "specs",
             "--with-stories",
@@ -434,6 +477,8 @@ fn init_title_collision_writes_nothing() {
             "spec",
             "init",
             root.to_str().unwrap(),
+            "--framework",
+            "react",
             "--spec-dir",
             "specs",
             "--with-stories",

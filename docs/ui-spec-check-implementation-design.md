@@ -37,7 +37,7 @@
 
 ```text
 storymesh spec check [--spec-dir PATH] [--index PATH]
-storymesh spec init [PATH] [--framework react|vue|angular] [--spec-dir PATH] [--with-stories]
+storymesh spec init [PATH] --framework react|vue|angular [--spec-dir PATH] [--with-stories]
 storymesh spec import [--index PATH] [--spec-dir PATH] [--merge]
 ```
 
@@ -46,7 +46,7 @@ storymesh spec import [--index PATH] [--spec-dir PATH] [--merge]
 | `--spec-dir` | `.storymesh/specs` | `*.yaml` / `*.yml` を再帰読み込みするディレクトリ。カレントディレクトリ基準 |
 | `--index` | `storybook-static/index.json` | Storybook が生成した index。カレントディレクトリ基準 |
 | `init PATH` | `.` | 既存 scanner のコンポーネント走査ルート。`init` のみ |
-| `init --framework` | `react` | 既存 scanner と同じフレームワーク。`init` のみ |
+| `init --framework` | 必須 | 既存 scanner と同じフレームワーク。`init` のみ |
 | `init --with-stories` | 無効 | story ファイルがないコンポーネントに story skeleton を同時生成 |
 | `import --merge` | 無効 | 既存 Spec に index の新規 Story を追記。明示指定した場合のみ |
 

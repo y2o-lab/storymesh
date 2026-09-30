@@ -124,7 +124,7 @@ pnpm exec storybook index -o storybook-static/index.json
 ./target/release/storymesh spec check --spec-dir .storymesh/specs --index storybook-static/index.json
 ```
 
-`spec init` はコンポーネントから `.storymesh/specs` に YAML の下書きを作ります。通常は `stories: []` なので、必要な UI 状態を書いてから `spec check` してください。`--with-stories` は story ファイルがまだないコンポーネントに CSF の `Default` を作り、その Story を required とする YAML を作ります。既存 story ファイルは編集しません。生成した story が Storybook に登録されるかは index を再生成して確認してください。
+`spec init` は `--framework react|vue|angular` を必須とし、コンポーネントから `.storymesh/specs` に YAML の下書きを作ります。通常は `stories: []` なので、必要な UI 状態を書いてから `spec check` してください。`--with-stories` は story ファイルがまだないコンポーネントに CSF の `Default` を作り、その Story を required とする YAML を作ります。既存 story ファイルは編集しません。生成した story が Storybook に登録されるかは index を再生成して確認してください。
 
 `spec import` は index の Story を title ごとに YAML にします。既存 Spec は上書きせずスキップします。`--merge` は title が完全一致する既存 Spec に新しい Story だけを追記します。コメントと既存の `required` を保持するため、更新対象は単純な v1 ブロック形式の `stories` リストに限ります。anchor、alias、フロー形式、複数ドキュメントは拒否します。
 
@@ -175,7 +175,7 @@ Missing: 1
 profile.ts
 ```
 
-`PATH` を省略するとカレントディレクトリを検査します。`--framework` を省略した場合は `react` です。
+`PATH` を省略するとカレントディレクトリを検査します。`check` / `coverage` / `report` で `--framework` を省略した場合は `react` です。
 
 ### 除外設定
 

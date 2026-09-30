@@ -97,7 +97,7 @@ pub(super) struct SpecCheckArgs {
 pub(super) struct SpecInitArgs {
     #[arg(default_value = ".")]
     pub(super) path: PathBuf,
-    #[arg(long, value_enum, default_value_t = CliFramework::React)]
+    #[arg(long, value_enum, required = true)]
     pub(super) framework: CliFramework,
     #[arg(long, default_value = ".storymesh/specs")]
     pub(super) spec_dir: PathBuf,

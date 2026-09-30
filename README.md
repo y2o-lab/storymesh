@@ -111,6 +111,44 @@ Card.stories.tsx
 
 React はコンポーネントと同じ拡張子（例: `Button.tsx` → `Button.stories.tsx`）、Vue と Angular は `.stories.ts` を生成します。React は default export と、ファイル名に対応する一般的な named export を判別します。import 可能な export が見つからない場合は、Storybook 上で編集を始められる `render: () => null` のプレースホルダーを生成します。Vue は default export、Angular は一般的なクラス名（例: `user-card.component.ts` → `UserCardComponent`）を前提とするため、プロジェクトの export が異なる場合は生成後に import を調整してください。
 
+### `spec check` / `spec init` / `spec import`
+
+UI 状態の要求を YAML に宣言し、Storybook が登録した Story と照合できます。従来の `check` は story **ファイル**の有無を調べますが、`spec check` は Storybook の `index.json` にある Story entry を調べます。Storybook を使うプロジェクトで、その checkout から index を毎回生成してください。
+
+```sh
+pnpm exec storybook index -o storybook-static/index.json
+./target/release/storymesh spec init src/components --framework react
+./target/release/storymesh spec init src/components --framework react --with-stories
+./target/release/storymesh spec import --index storybook-static/index.json
+./target/release/storymesh spec import --index storybook-static/index.json --merge
+./target/release/storymesh spec check --spec-dir .storymesh/specs --index storybook-static/index.json
+```
+
+`spec init` は `--framework react|vue|angular` を必須とし、コンポーネントから `.storymesh/specs` に YAML の下書きを作ります。通常は `stories: []` なので、必要な UI 状態を書いてから `spec check` してください。`--with-stories` は story ファイルがまだないコンポーネントに CSF の `Default` を作り、その Story を required とする YAML を作ります。既存 story ファイルは編集しません。生成した story が Storybook に登録されるかは index を再生成して確認してください。
+
+`spec import` は index の Story を title ごとに YAML にします。既存 Spec は上書きせずスキップします。`--merge` は title が完全一致する既存 Spec に新しい Story だけを追記します。コメントと既存の `required` を保持するため、更新対象は単純な v1 ブロック形式の `stories` リストに限ります。anchor、alias、フロー形式、複数ドキュメントは拒否します。
+
+YAML v1 の例:
+
+```yaml
+version: 1
+component:
+  id: button
+  name: Button
+  title: Components/Button
+stories:
+  - id: default
+    required: true
+  - id: loading
+    required: true
+  - id: debug
+    required: false
+```
+
+`component.title` は index の title と完全一致です。省略すると `name` と一致する title または末尾セグメントが一致する title を探し、複数あればエラーにします。Story の照合には index の `name` を小文字にし、空白・`_`・`-` の連続を `-` にした ID を使います。Story 名を変えると照合結果も変わります。`required: false` は存在を要求しませんが、実在しても警告しません。
+
+`spec check` は required Story がそろえば `PASS` / 終了コード `0`、不足すれば `FAIL` / `1` です。宣言外 Story は `WARNING` として表示し、警告のみなら `PASS` / `0` です。YAML・index の欠落や不正、曖昧な照合、空の下書きは終了コード `2` で、`PASS` は表示しません。割合は表示しません。検査するのは Storybook への登録の有無までで、描画、args、操作結果、Scenario の正しさは保証しません。
+
 ### `coverage`
 
 coverage のパーセントと件数を表示します。
@@ -137,7 +175,7 @@ Missing: 1
 profile.ts
 ```
 
-`PATH` を省略するとカレントディレクトリを検査します。`--framework` を省略した場合は `react` です。
+`PATH` を省略するとカレントディレクトリを検査します。`check` / `coverage` / `report` で `--framework` を省略した場合は `react` です。
 
 ### 除外設定
 
@@ -183,9 +221,9 @@ pnpm storymesh:ignore-file
 
 | 終了コード | 意味 |
 | --- | --- |
-| `0` | 正常終了した。通常の `check` では missing がなく、`--generate` 指定時は生成に成功した |
-| `1` | 通常の `check` が story のないコンポーネントを検出した |
-| `2` | パスの読み取りや出力などでエラーが発生した |
+| `0` | 正常終了した。`check` / `spec check` では不足がない。生成コマンドでは生成に成功した |
+| `1` | `check` が story のないコンポーネント、または `spec check` が不足する required Story を検出した |
+| `2` | 入力、曖昧な照合、パスの読み取りや出力などでエラーが発生した |
 
 `coverage`、`report`、生成に成功した `check --generate` は missing があっても正常終了します。missing を CI の失敗として扱う場合は `--generate` を付けない `check` を使用してください。
 

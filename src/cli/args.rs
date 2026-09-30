@@ -19,6 +19,8 @@ pub(super) enum Command {
     Coverage(ScanArgs),
     /// Show covered and missing component totals.
     Report(ScanArgs),
+    /// Check UI state specifications or create draft specifications.
+    Spec(SpecArgs),
 }
 
 #[derive(Clone, Debug, Args)]
@@ -65,4 +67,51 @@ impl From<CliFramework> for Framework {
             CliFramework::Angular => Self::Angular,
         }
     }
+}
+
+#[derive(Clone, Debug, Args)]
+pub(super) struct SpecArgs {
+    #[command(subcommand)]
+    pub(super) command: SpecCommand,
+}
+
+#[derive(Clone, Debug, Subcommand)]
+pub(super) enum SpecCommand {
+    /// Compare required UI states with registered Storybook stories.
+    Check(SpecCheckArgs),
+    /// Create draft specs from component files.
+    Init(SpecInitArgs),
+    /// Create specs from a Storybook index.
+    Import(SpecImportArgs),
+}
+
+#[derive(Clone, Debug, Args)]
+pub(super) struct SpecCheckArgs {
+    #[arg(long, default_value = ".storymesh/specs")]
+    pub(super) spec_dir: PathBuf,
+    #[arg(long, default_value = "storybook-static/index.json")]
+    pub(super) index: PathBuf,
+}
+
+#[derive(Clone, Debug, Args)]
+pub(super) struct SpecInitArgs {
+    #[arg(default_value = ".")]
+    pub(super) path: PathBuf,
+    #[arg(long, value_enum, required = true)]
+    pub(super) framework: CliFramework,
+    #[arg(long, default_value = ".storymesh/specs")]
+    pub(super) spec_dir: PathBuf,
+    #[arg(long)]
+    pub(super) with_stories: bool,
+}
+
+#[derive(Clone, Debug, Args)]
+pub(super) struct SpecImportArgs {
+    #[arg(long, default_value = "storybook-static/index.json")]
+    pub(super) index: PathBuf,
+    #[arg(long, default_value = ".storymesh/specs")]
+    pub(super) spec_dir: PathBuf,
+    /// Append newly indexed stories to existing specs with an exact title.
+    #[arg(long)]
+    pub(super) merge: bool,
 }

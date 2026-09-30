@@ -13,11 +13,21 @@
 
 ## バージョンの決め方
 
-バージョンはタグから自動生成しません。公開する人が `MAJOR.MINOR.PATCH` を決め、`node scripts/set-version.mjs X.Y.Z` で Cargo と6つの npm package を一括更新します。判断の目安は [Semantic Versioning](https://semver.org/) に従い、互換性を保つ不具合修正なら patch（`0.1.0` → `0.1.1`）、機能追加なら minor（`0.1.0` → `0.2.0`）、`1.0.0` 以降の互換性を壊す変更なら major を上げます。`0.x` は開発段階で、安定した互換性は保証しません。安定した利用者向けの仕様を定める際に `1.0.0` を選びます。
+バージョンはタグから自動生成しません。公開する人が `VERSION` を決め、`node scripts/set-version.mjs VERSION` で Cargo と6つの npm package を一括更新します。通常版の `VERSION` は `MAJOR.MINOR.PATCH` です。判断の目安は [Semantic Versioning](https://semver.org/) に従い、互換性を保つ不具合修正なら patch（`0.1.0` → `0.1.1`）、機能追加なら minor（`0.1.0` → `0.2.0`）、`1.0.0` 以降の互換性を壊す変更なら major を上げます。`0.x` は開発段階で、安定した互換性は保証しません。安定した利用者向けの仕様を定める際に `1.0.0` を選びます。
 
-Git タグは `vX.Y.Z` とします。例えば `v0.2.0` の push で公開するには、タグが指す commit の `Cargo.toml`、`Cargo.lock`、6つの `package.json` と optional dependencies がすべて `0.2.0` である必要があります。一致しない場合、workflow は公開前に失敗します。公開済みのバージョンは上書きできないため、内容を変更するリリースには新しいバージョンを使います。
+先行版の `VERSION` は `MAJOR.MINOR.PATCH-{alpha|beta|rc|canary}.N`（`N` は1以上の整数）とします。用途と npm dist-tag は次のとおりです。
 
-現在の公開スクリプトは npm dist-tag を指定しないため、`npm publish` は `latest` を付けます。[npm の dist-tag 説明](https://docs.npmjs.com/adding-dist-tags-to-packages/) に従い、`0.2.0-beta.1` などの先行版を公開したい場合は、先に6 package すべてに適切な dist-tag を設定するよう公開スクリプトを変更してください。
+| `VERSION` の例 | 用途 | npm dist-tag |
+| --- | --- | --- |
+| `0.2.0-canary.1` | 頻繁な開発版の確認 | `canary` |
+| `0.2.0-alpha.1` | 初期の先行版 | `alpha` |
+| `0.2.0-beta.1` | 利用者による試用 | `beta` |
+| `0.2.0-rc.1` | 正式版の候補 | `rc` |
+| `0.2.0` | 通常版 | `latest` |
+
+先行版も手動で番号を選び、同じ段階で内容を変える場合は `N` を増やします。例えば `0.2.0-beta.1` の次は `0.2.0-beta.2` です。公開スクリプトは6 package に同じ npm dist-tag を明示し、`npm install storymesh@beta` のように指定して試せます。通常の `npm install storymesh` は `latest` を選びます。[npm の dist-tag 説明](https://docs.npmjs.com/adding-dist-tags-to-packages/)。
+
+Git タグは `vVERSION` とします。例えば `v0.2.0-beta.1` の push で公開するには、タグが指す commit の `Cargo.toml`、`Cargo.lock`、6つの `package.json` と optional dependencies がすべて `0.2.0-beta.1` である必要があります。一致しない場合、workflow は公開前に失敗します。公開済みのバージョンは上書きできないため、内容を変更するリリースには新しいバージョンを使います。
 
 ## 初回公開前の準備
 
@@ -33,7 +43,7 @@ Git タグは `vX.Y.Z` とします。例えば `v0.2.0` の push で公開す�
 現在の `0.1.0` を初回公開する場合はバージョン更新を省略できます。別のバージョンにする場合は次を実行します。
 
 ```sh
-node scripts/set-version.mjs X.Y.Z
+node scripts/set-version.mjs VERSION
 mise run verify
 ```
 
@@ -76,23 +86,23 @@ git push origin v0.1.0
 
 ## 2回目以降の公開
 
-1. `node scripts/set-version.mjs X.Y.Z` で Cargo、lockfile、全 npm manifest のバージョンを同時に更新します。
+1. `node scripts/set-version.mjs VERSION` で Cargo、lockfile、全 npm manifest のバージョンを同時に更新します。
 2. `mise run verify` を実行し、変更を commit、レビューして `main` に取り込みます。
 3. GitHub 上の `main` の commit とローカルの対象 commit が同一であることを確認します。
-4. `main` の対象 commit で `git tag vX.Y.Z` と `git push origin vX.Y.Z` を実行します。タグ push だけが npm 公開 job を起動します。
+4. `main` の対象 commit で `git tag vVERSION` と `git push origin vVERSION` を実行します。タグ push だけが npm 公開 job を起動します。
 5. **Release npm** workflow の build と publish が成功したことを確認します。
 6. npm 上の version、provenance、platform package の依存関係を確認し、クリーンな一時ディレクトリで実行確認します。
 
 ```sh
 mkdir /tmp/storymesh-npm-smoke
 cd /tmp/storymesh-npm-smoke
-npm exec --yes --package=storymesh@X.Y.Z -- storymesh --version
+npm exec --yes --package=storymesh@VERSION -- storymesh --version
 ```
 
-タグの `v` を除いた値、`Cargo.toml`、`Cargo.lock`、6つの `package.json`、main package の optional dependencies はすべて同一バージョンでなければなりません。workflow は公開前にこの条件と tarball 内容を検査します。公開済みの同じ package/version は上書きできないため、失敗後に内容を修正する場合は新しい patch version を使用してください。
+タグの `v` を除いた値、`Cargo.toml`、`Cargo.lock`、6つの `package.json`、main package の optional dependencies はすべて同一バージョンでなければなりません。workflow は公開前にこの条件と tarball 内容を検査します。公開済みの同じ package/version は上書きできません。内容を修正する場合は、通常版なら次のバージョン、先行版なら `N` を増やした新しいバージョンを使用してください。
 
 ## 失敗時の確認
 
-build が失敗した場合は、修正して新しい commit とバージョンでリリースしてください。publish が途中で失敗した場合は、同じタグの workflow を再実行できます。スクリプトは npm 上で公開済みの package/version を skip し、残りの package を順に公開します。公開済み package の内容を変更した場合は同じ version に再公開できないため、新しい patch version に進めてください。手動起動の workflow では公開できません。
+build が失敗した場合は、修正して新しい commit とバージョンでリリースしてください。publish が途中で失敗した場合は、同じタグの workflow を再実行できます。スクリプトは npm 上で公開済みの package/version を skip し、残りの package を順に公開します。公開済み package の内容を変更した場合は同じ version に再公開できないため、新しいバージョンに進めてください。手動起動の workflow では公開できません。
 
 Trusted publishing の設定項目と要件は [npm 公式ドキュメント](https://docs.npmjs.com/trusted-publishers/) を参照してください。GitHub Environment のタグ制限は [GitHub 公式ドキュメント](https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments) を参照してください。

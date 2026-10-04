@@ -1,0 +1,294 @@
+# storymesh
+
+[English](README.md) | 日本語
+
+`storymesh` は、コンポーネントに対応する Storybook の story ファイルがあるかを検査し、story coverage を報告する Rust 製 CLI です。React、Vue、Angular に対応しています。
+
+次の用途を想定しています。
+
+- story がないコンポーネントを一覧表示する
+- story がないコンポーネント用の最小 story を生成する
+- Storybook coverage を件数とパーセントで確認する
+- CI で story の追加漏れを検知する
+
+## 対応フレームワーク
+
+| フレームワーク | 主なコンポーネントファイル | `--framework` |
+| --- | --- | --- |
+| React | `.tsx`、`.jsx`、PascalCase の `.ts` / `.js` | `react` |
+| Vue | `.vue` | `vue` |
+| Angular | `*.component.ts`、`@Component(...)` を持つ `.ts` | `angular` |
+
+## インストール
+
+npm を利用する場合は、プロジェクトへの追加または一度だけの実行ができます。
+
+```sh
+npm install --save-dev storymesh
+npx storymesh check src/components --framework react
+```
+
+グローバルにインストールする場合は次のとおりです。
+
+```sh
+npm install --global storymesh
+storymesh --help
+```
+
+## AI エージェント向けスキル
+
+AI エージェントに story coverage の確認、missing story の検出、明示依頼時の
+story skeleton 生成を行わせる場合は、`npx skills` で `storymesh` スキルを導入できます。
+
+```sh
+npx skills add y2o-lab/storymesh --skill storymesh
+```
+
+Codex のプロジェクト設定へ確認なしで導入する場合は、次を実行します。
+
+```sh
+npx skills add y2o-lab/storymesh --skill storymesh --agent codex --yes
+```
+
+配布・公開の詳細は [AI エージェント向けスキルの配布・公開手順](docs/skills-publishing.md)
+を参照してください。
+
+対応する npm 配布環境は、glibc Linux x64/ARM64、macOS x64/ARM64、Windows x64 です。Node.js 18 以上が必要です。
+
+ソースからビルドする場合は、[mise](https://mise.jdx.dev/) をインストールし、このリポジトリを取得したディレクトリで実行します。
+
+```sh
+mise install
+mise exec -- cargo build --release
+./target/release/storymesh --help
+```
+
+以降の例ではビルド済みの `./target/release/storymesh` を使用します。開発中に直接実行する場合は、代わりに `mise exec -- cargo run --` を使用できます。
+
+## クイックスタート
+
+React プロジェクトの `src/components` を検査する例です。
+
+```sh
+./target/release/storymesh check src/components --framework react
+```
+
+story がないコンポーネントがある場合は、対象ファイルを表示して終了コード `1` を返します。
+
+```text
+Missing stories for 1 React component(s):
+Card.tsx
+```
+
+すべてのコンポーネントに story がある場合は終了コード `0` です。
+
+```text
+All 3 React components have stories.
+```
+
+## コマンド
+
+### `check`
+
+story がないコンポーネントを一覧表示します。CI で追加漏れを検知する場合に使用します。
+
+```sh
+./target/release/storymesh check [PATH] [--framework react|vue|angular] [--ignore PATTERN] [--ignore-file PATH] [--generate]
+```
+
+`--generate` を指定すると、missing として検出した各コンポーネントと同じディレクトリに、最小の [Component Story Format (CSF)](https://storybook.js.org/docs/api/csf) story を生成します。
+
+```sh
+./target/release/storymesh check src/components --framework react --generate
+```
+
+```text
+Missing stories for 1 React component(s):
+Card.tsx
+Generated 1 story skeleton(s):
+Card.stories.tsx
+```
+
+`--generate` 指定時は missing の有無ではなく生成処理の成否を終了コードで示します。すべて生成できた場合（生成対象がない場合を含む）は `0`、生成に失敗した場合は `2` です。生成した story を含めて再度 `check` すると coverage 済みとして扱われます。既存ファイルは上書きしません。
+
+React はコンポーネントと同じ拡張子（例: `Button.tsx` → `Button.stories.tsx`）、Vue と Angular は `.stories.ts` を生成します。React は default export と、ファイル名に対応する一般的な named export を判別します。import 可能な export が見つからない場合は、Storybook 上で編集を始められる `render: () => null` のプレースホルダーを生成します。Vue は default export、Angular は一般的なクラス名（例: `user-card.component.ts` → `UserCardComponent`）を前提とするため、プロジェクトの export が異なる場合は生成後に import を調整してください。
+
+### `spec check` / `spec init` / `spec import`
+
+UI 状態の要求を YAML に宣言し、Storybook が登録した Story と照合できます。従来の `check` は story **ファイル**の有無を調べますが、`spec check` は Storybook の `index.json` にある Story entry を調べます。Storybook を使うプロジェクトで、その checkout から index を毎回生成してください。
+
+```sh
+pnpm exec storybook index -o storybook-static/index.json
+./target/release/storymesh spec init src/components --framework react
+./target/release/storymesh spec init src/components --framework react --with-stories
+./target/release/storymesh spec import --index storybook-static/index.json
+./target/release/storymesh spec import --index storybook-static/index.json --merge
+./target/release/storymesh spec check --spec-dir .storymesh/specs --index storybook-static/index.json
+```
+
+`spec init` は `--framework react|vue|angular` を必須とし、コンポーネントから `.storymesh/specs` に YAML の下書きを作ります。通常は `stories: []` なので、必要な UI 状態を書いてから `spec check` してください。`--with-stories` は story ファイルがまだないコンポーネントに CSF の `Default` を作り、その Story を required とする YAML を作ります。既存 story ファイルは編集しません。生成した story が Storybook に登録されるかは index を再生成して確認してください。
+
+`spec import` は index の Story を title ごとに YAML にします。既存 Spec は上書きせずスキップします。`--merge` は title が完全一致する既存 Spec に新しい Story だけを追記します。コメントと既存の `required` を保持するため、更新対象は単純な v1 ブロック形式の `stories` リストに限ります。anchor、alias、フロー形式、複数ドキュメントは拒否します。
+
+YAML v1 の例:
+
+```yaml
+version: 1
+component:
+  id: button
+  name: Button
+  title: Components/Button
+stories:
+  - id: default
+    required: true
+  - id: loading
+    required: true
+  - id: debug
+    required: false
+```
+
+`component.title` は index の title と完全一致です。省略すると `name` と一致する title または末尾セグメントが一致する title を探し、複数あればエラーにします。Story の照合には index の `name` を小文字にし、空白・`_`・`-` の連続を `-` にした ID を使います。Story 名を変えると照合結果も変わります。`required: false` は存在を要求しませんが、実在しても警告しません。
+
+`spec check` は required Story がそろえば `PASS` / 終了コード `0`、不足すれば `FAIL` / `1` です。宣言外 Story は `WARNING` として表示し、警告のみなら `PASS` / `0` です。YAML・index の欠落や不正、曖昧な照合、空の下書きは終了コード `2` で、`PASS` は表示しません。割合は表示しません。検査するのは Storybook への登録の有無までで、描画、args、操作結果、Scenario の正しさは保証しません。
+
+### `coverage`
+
+coverage のパーセントと件数を表示します。
+
+```sh
+./target/release/storymesh coverage src/components --framework vue
+```
+
+```text
+Vue Storybook coverage: 83.3% (5/6 components)
+```
+
+### `report`
+
+coverage と、story がないコンポーネントの両方を表示します。
+
+```sh
+./target/release/storymesh report src/app --framework angular
+```
+
+```text
+Angular Storybook coverage: 83.3% (5/6 components)
+Missing: 1
+profile.ts
+```
+
+`PATH` を省略するとカレントディレクトリを検査します。`check` / `coverage` / `report` で `--framework` を省略した場合は `react` です。
+
+### 除外設定
+
+検査対象からパスを除外するには、`--ignore` を繰り返し指定します。パターンは検査ルートからの相対パスとして解釈されます。
+
+```sh
+./target/release/storymesh check src --ignore 'generated/**' --ignore '**/*.fixture.tsx'
+```
+
+検査ルートの `.storymeshignore` は自動的に読み込みます。`.gitignore` と同じ形式で、空行・`#` コメント・`!` による再包含・`*` / `**`・末尾の `/` を使用できます。
+
+```gitignore
+# generated components are not maintained by this repository
+generated/
+**/*.fixture.tsx
+!generated/DocumentedButton.tsx
+```
+
+別の ignore ファイルを追加する場合は `--ignore-file` を繰り返し指定できます。相対パスは検査ルートを基準に解決されます。
+
+開発環境の React、Vue、Angular テストアプリでは、次のコマンドで手動検証できます。
+通常の `storymesh:check` は意図的に未対応の fixture を 1 件報告し、後者の 2 コマンドは
+それぞれ `--ignore` と `--ignore-file` によって成功します。
+
+```sh
+cd .storymesh-test-apps/react-app
+pnpm storymesh:check
+pnpm storymesh:ignore-pattern
+pnpm storymesh:ignore-file
+
+cd ../vue-app
+pnpm storymesh:check
+pnpm storymesh:ignore-pattern
+pnpm storymesh:ignore-file
+
+cd ../angular-app
+pnpm storymesh:check
+pnpm storymesh:ignore-pattern
+pnpm storymesh:ignore-file
+```
+
+## 終了コード
+
+| 終了コード | 意味 |
+| --- | --- |
+| `0` | 正常終了した。`check` / `spec check` では不足がない。生成コマンドでは生成に成功した |
+| `1` | `check` が story のないコンポーネント、または `spec check` が不足する required Story を検出した |
+| `2` | 入力、曖昧な照合、パスの読み取りや出力などでエラーが発生した |
+
+`coverage`、`report`、生成に成功した `check --generate` は missing があっても正常終了します。missing を CI の失敗として扱う場合は `--generate` を付けない `check` を使用してください。
+
+## 検出規則
+
+### 共通
+
+- story はコンポーネントと同じディレクトリ、または直下の `stories` / `__stories__` ディレクトリから検索します。
+- story の拡張子は `.js`、`.jsx`、`.mjs`、`.cjs`、`.ts`、`.tsx` に対応します。
+- `.git`、`.next`、`.storybook`、`build`、`coverage`、`dist`、`node_modules`、`target` ディレクトリは走査しません。
+- `.storymeshignore`、`--ignore`、`--ignore-file` で除外したファイルは、component と story のいずれにも数えません。
+- `*.test.*`、`*.spec.*`、story 自身はコンポーネント数に含めません。
+
+### React
+
+- `.tsx` / `.jsx` をコンポーネントとして扱います。小文字の `main.tsx` / `main.jsx` はエントリポイントとして除外します。
+- `.js` / `.ts` は PascalCase のファイル名（例: `Button.js`）をコンポーネントとして扱います。
+- `*.d.ts` は除外します。
+- `Button.tsx` には `Button.stories.tsx` のような同名の story を対応付けます。
+- `Button/index.tsx` と `Button/Button.stories.tsx` の構成にも対応します。
+
+### Vue
+
+- `.vue` をコンポーネントとして扱います。
+- `Button.vue` には `Button.stories.ts` のような同名の story を対応付けます。
+- `Button/index.vue` と `Button/Button.stories.ts` の構成にも対応します。
+
+### Angular
+
+- `*.component.ts` をコンポーネントとして扱います。
+- Angular の新しい命名規則で生成される `app.ts` などは、コメントと文字列を除いたコード上の `@Component(...)` デコレータから検出します。
+- `button.component.ts` には `button.stories.ts` または `button.component.stories.ts` を対応付けます。
+- suffix-less component の `profile.ts` には `profile.stories.ts` を対応付けます。
+
+## 既知の制約
+
+`storymesh` はパスとファイル名を中心に判定し、Storybook の CSF や各フレームワークの AST を完全には解析しません。
+
+- コンポーネントと異なる名前の story は対応付けません。
+- MDX ドキュメントは coverage に数えません。
+- React の非コンポーネント `.jsx` / `.tsx` や、Vue の画面・レイアウトもコンポーネントとして数える場合があります。
+- Angular の `Component` を別名 import した suffix-less component は検出しません。
+
+## 開発
+
+開発用コマンドは `mise` 経由で実行します。ハーネス検査には `jq` も必要です。
+
+```sh
+mise run quick    # rustfmt + tests
+mise run handoff  # 差分に応じた最終ゲート
+mise run verify   # harness + rustfmt + Clippy + tests
+mise run format
+mise run lint
+mise run test
+mise run check
+mise run npm-check
+```
+
+Codex 開発ハーネスの運用方法は [docs/codex-harness.md](docs/codex-harness.md) を参照してください。
+npm 公開を行うメンテナー向けの手順は [npm 公開手順](docs/npm-publishing.md) を参照してください。
+
+### 依存関係の更新
+
+依存関係の更新 PR は Renovate で管理します。リポジトリ管理者は
+[Renovate GitHub App](https://github.com/apps/renovate) をこのリポジトリにインストールしてください。
+設定は [renovate.json](renovate.json) にあり、Rust（Cargo）、npm、GitHub Actions の更新を検出します。

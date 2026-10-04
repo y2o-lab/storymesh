@@ -27,6 +27,8 @@ The canonical GitHub repository is `y2o-lab/storymesh`; the registry is `https:/
 7. Set every package's Publishing access to **Require two-factor authentication and disallow tokens**; OIDC still works. Revoke the bootstrap token on npm and delete the GitHub **NPM_TOKEN** secret. Normal tag publishing uses OIDC without an npm token. It requires Node.js 22.14.0+ and npm CLI 11.5.1+ on GitHub-hosted runners. Public packages from a public repository receive automatic provenance.
 8. Verify all six versions and dist-tags and run a clean-install smoke test. When authorized, create `vVERSION` on the exact bootstrap commit and push it; the workflow skips the already published versions.
 
+Successful bootstrap staging also creates a draft GitHub Release for `vVERSION` at the workflow commit with GitHub-generated notes (merged PRs, contributors, and a full changelog link). Review and edit the draft as needed. After npm approval, push the tag on that exact commit: successful tag publishing promotes the draft without overwriting its notes. A draft targeting a different commit fails the release job and requires review; do not move a release tag to resolve it. If no draft exists, successful tag publishing creates a published release with generated notes. Reruns reuse existing releases. Failed staging/publishing and build-only manual runs do not create releases; prerelease versions become GitHub prereleases. The release job uses `GITHUB_TOKEN` with job-scoped `contents: write`; no additional secret is required.
+
 After an authorized publication, run this in a new temporary directory and verify the reported version:
 
 ```sh

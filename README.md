@@ -298,6 +298,10 @@ Logs are ignored by Git. Compare uncached input, output, reasoning tokens, and c
 
 Maintainer setup, first-release staging, version selection, tag publishing, and recovery are documented in the [npm release skill](.agents/skills/storymesh-npm-release/SKILL.md). The [release workflow](.github/workflows/release.yml) defines build and publishing behavior.
 
+After all six packages are successfully staged, the workflow creates a draft GitHub Release named `vVERSION` targeting that workflow's commit. Staging still requires approval on npmjs.com. After npm approval, push `vVERSION` on that same commit as described in the release skill; successful tag publishing publishes the existing draft, preserving any edits to its notes. If no draft exists, it creates a published release. Build-only manual runs and failed staging or publishing do not create releases. Reruns reuse an existing release, and prerelease versions are marked as GitHub prereleases.
+
+Release notes use GitHub's automatic generation: merged pull requests, contributors, and a full changelog link. Write descriptive PR titles because they appear in the notes; changes pushed without a PR may only be visible in the full changelog. Review the draft to add highlights, migration instructions, or installation guidance. GitHub does not generate those explanations from the code diff.
+
 ### Dependency updates
 
 Renovate manages dependency update PRs. Repository administrators should install the [Renovate GitHub App](https://github.com/apps/renovate) for this repository. Configuration lives in [renovate.json](renovate.json) and covers Rust (Cargo), npm, and GitHub Actions updates.

@@ -138,3 +138,22 @@ jobs:
             exit 1
           fi
           node scripts/publish-npm-packages.mjs release-npm --stage
+
+  github-release:
+    needs: [publish, bootstrap-stage]
+    if: >-
+      always() && !cancelled() &&
+      (needs.publish.result == 'success' || needs.bootstrap-stage.result == 'success')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Create release notes or publish the existing draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_DRAFT: ${{ needs.bootstrap-stage.result == 'success' }}
+        run: node scripts/github-release.mjs

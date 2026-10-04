@@ -21,12 +21,26 @@
 
 ## インストール
 
-npm を利用する場合は、プロジェクトへの追加または一度だけの実行ができます。
+npm パッケージは npm、pnpm、Yarn、Bun でプロジェクトに追加して実行できます。
+
+| パッケージマネージャー | 開発依存への追加 | 実行 |
+| --- | --- | --- |
+| [npm](https://docs.npmjs.com/cli/commands/npm-install) | `npm install --save-dev storymesh` | `npx storymesh check src/components --framework react` |
+| [pnpm](https://pnpm.io/cli/add) | `pnpm add -D storymesh` | `pnpm exec storymesh check src/components --framework react` |
+| [Yarn](https://yarnpkg.com/cli/add) | `yarn add -D storymesh` | `yarn run storymesh check src/components --framework react` |
+| [Bun](https://bun.sh/docs/pm/cli/add) | `bun add -d storymesh` | `bunx storymesh check src/components --framework react` |
+
+Yarn の例は `node_modules` へのインストールを前提としています（Yarn Classic、または現行 Yarn の `.yarnrc.yml` に `nodeLinker: node-modules` を指定した環境）。Plug'n'Play での互換性は未検証です。
+
+プロジェクトの依存に追加せず実行する場合は、次のいずれかを利用できます。
 
 ```sh
-npm install --save-dev storymesh
 npx storymesh check src/components --framework react
+pnpm dlx storymesh check src/components --framework react
+bunx storymesh check src/components --framework react
 ```
+
+詳細は [pnpm の実行ドキュメント](https://pnpm.io/cli/exec)、[pnpm dlx](https://pnpm.io/cli/dlx)、[Yarn の実行ドキュメント](https://yarnpkg.com/cli/run)、[bunx](https://bun.sh/docs/pm/bunx) を参照してください。Bun を利用する場合も、本 CLI の Node.js ランチャー用に Node.js 18 以上が必要です。
 
 グローバルにインストールする場合は次のとおりです。
 

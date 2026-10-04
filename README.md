@@ -21,12 +21,26 @@ Use it to:
 
 ## Installation
 
-Install with npm in your project, or run the CLI with npx:
+Install the npm package with npm, pnpm, Yarn, or Bun, then run the CLI in your project:
+
+| Package manager | Install as a development dependency | Run |
+| --- | --- | --- |
+| [npm](https://docs.npmjs.com/cli/commands/npm-install) | `npm install --save-dev storymesh` | `npx storymesh check src/components --framework react` |
+| [pnpm](https://pnpm.io/cli/add) | `pnpm add -D storymesh` | `pnpm exec storymesh check src/components --framework react` |
+| [Yarn](https://yarnpkg.com/cli/add) | `yarn add -D storymesh` | `yarn run storymesh check src/components --framework react` |
+| [Bun](https://bun.sh/docs/pm/cli/add) | `bun add -d storymesh` | `bunx storymesh check src/components --framework react` |
+
+The Yarn example assumes a `node_modules` installation (Yarn Classic, or `nodeLinker: node-modules` in `.yarnrc.yml` for modern Yarn). Plug'n'Play compatibility has not been verified.
+
+To run without adding a project dependency, choose one of these commands:
 
 ```sh
-npm install --save-dev storymesh
 npx storymesh check src/components --framework react
+pnpm dlx storymesh check src/components --framework react
+bunx storymesh check src/components --framework react
 ```
+
+See the [pnpm execution docs](https://pnpm.io/cli/exec), [pnpm dlx docs](https://pnpm.io/cli/dlx), [Yarn execution docs](https://yarnpkg.com/cli/run), and [bunx docs](https://bun.sh/docs/pm/bunx) for details. Bun also requires Node.js 18 or later for this CLI's Node.js launcher.
 
 To install globally:
 

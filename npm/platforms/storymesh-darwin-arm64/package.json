@@ -1,6 +1,6 @@
 {
   "name": "storymesh-darwin-arm64",
-  "version": "0.1.0",
+  "version": "0.1.0-alpha.1",
   "description": "storymesh binary for macOS ARM64",
   "license": "MIT",
   "repository": {

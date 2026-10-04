@@ -1,6 +1,6 @@
 {
   "name": "storymesh",
-  "version": "0.1.0",
+  "version": "0.1.0-alpha.1",
   "description": "Audit Storybook story coverage and report gaps.",
   "license": "MIT",
   "repository": {
@@ -20,11 +20,11 @@
     "node": ">=18"
   },
   "optionalDependencies": {
-    "storymesh-darwin-arm64": "0.1.0",
-    "storymesh-darwin-x64": "0.1.0",
-    "storymesh-linux-arm64": "0.1.0",
-    "storymesh-linux-x64": "0.1.0",
-    "storymesh-win32-x64": "0.1.0"
+    "storymesh-darwin-arm64": "0.1.0-alpha.1",
+    "storymesh-darwin-x64": "0.1.0-alpha.1",
+    "storymesh-linux-arm64": "0.1.0-alpha.1",
+    "storymesh-linux-x64": "0.1.0-alpha.1",
+    "storymesh-win32-x64": "0.1.0-alpha.1"
   },
   "publishConfig": {
     "access": "public",

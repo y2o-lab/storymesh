@@ -7,7 +7,7 @@ const supported = [
   ["darwin", "x64", "storymesh-darwin-x64"],
   ["linux", "arm64", "storymesh-linux-arm64"],
   ["linux", "x64", "storymesh-linux-x64"],
-  ["win32", "x64", "storymesh-win32-x64"],
+  ["win32", "x64", "storymesh-windows-x64"],
 ];
 
 for (const [platform, arch, expected] of supported) {

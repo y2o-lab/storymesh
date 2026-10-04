@@ -61,7 +61,7 @@ jobs:
             binary: storymesh
           - runner: windows-latest
             target: x86_64-pc-windows-msvc
-            package: storymesh-win32-x64
+            package: storymesh-windows-x64
             binary: storymesh.exe
     runs-on: ${{ matrix.runner }}
     steps:

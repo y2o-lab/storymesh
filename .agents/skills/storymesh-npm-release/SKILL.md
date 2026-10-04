@@ -16,7 +16,7 @@ Check the current manifests, scripts, workflow, Git remote, and npm registry bef
 
 ## Maintainer setup and first publication
 
-The canonical GitHub repository is `y2o-lab/storymesh`; the registry is `https://registry.npmjs.org`. Confirm the Git remote and all six `repository.url` fields match the canonical repository before releasing. The current package names are `storymesh`, `storymesh-darwin-arm64`, `storymesh-darwin-x64`, `storymesh-linux-arm64`, `storymesh-linux-x64`, and `storymesh-win32-x64`; verify these against the manifests.
+The canonical GitHub repository is `y2o-lab/storymesh`; the registry is `https://registry.npmjs.org`. Confirm the Git remote and all six `repository.url` fields match the canonical repository before releasing. The current package names are `storymesh`, `storymesh-darwin-arm64`, `storymesh-darwin-x64`, `storymesh-linux-arm64`, `storymesh-linux-x64`, and `storymesh-windows-x64`; verify these against the manifests.
 
 1. Enable 2FA on the npm account with publication rights. Check ownership or availability of all six package names; only a confirmed E404 means a name is unpublished.
 2. In GitHub Settings → Environments, create `npm`. This is an Environment name, not an environment variable. If restricting deployment refs, allow `main` for bootstrap and `v*` tags for subsequent releases. Required reviewers are optional.

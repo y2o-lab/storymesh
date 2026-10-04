@@ -12,7 +12,7 @@ export const platformPackages = [
   { name: "storymesh-darwin-x64", os: "darwin", cpu: "x64", binary: "storymesh" },
   { name: "storymesh-linux-arm64", os: "linux", cpu: "arm64", binary: "storymesh" },
   { name: "storymesh-linux-x64", os: "linux", cpu: "x64", binary: "storymesh" },
-  { name: "storymesh-win32-x64", os: "win32", cpu: "x64", binary: "storymesh.exe" },
+  { name: "storymesh-windows-x64", os: "win32", cpu: "x64", binary: "storymesh.exe" },
 ];
 
 async function readJson(file) {

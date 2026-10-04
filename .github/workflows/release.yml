@@ -5,6 +5,15 @@ on:
     tags:
       - "v*"
   workflow_dispatch:
+    inputs:
+      bootstrap_stage:
+        description: Stage the first release using NPM_TOKEN; approve all six packages on npmjs.com
+        type: boolean
+        default: false
+
+concurrency:
+  group: release-npm
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -96,3 +105,36 @@ jobs:
         run: node scripts/npm-packages.mjs artifacts release-npm
       - name: Publish platform packages, then the CLI package
         run: node scripts/publish-npm-packages.mjs release-npm
+
+  bootstrap-stage:
+    needs: build
+    if: github.event_name == 'workflow_dispatch' && inputs.bootstrap_stage && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+      - name: Check npm staging support
+        run: |
+          npm --version
+          node -e "const { execFileSync } = require('node:child_process'); const [major, minor] = execFileSync('npm', ['--version'], { encoding: 'utf8' }).trim().split('.').map(Number); if (major < 11 || (major === 11 && minor < 15)) process.exit(1)"
+      - name: Prepare package tarballs
+        run: node scripts/npm-packages.mjs artifacts release-npm
+      - name: Stage packages for approval on npmjs.com
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [[ -z "$NODE_AUTH_TOKEN" ]]; then
+            echo "Set the npm Environment secret NPM_TOKEN to a stage-only granular token (Bypass 2FA disabled)."
+            exit 1
+          fi
+          node scripts/publish-npm-packages.mjs release-npm --stage

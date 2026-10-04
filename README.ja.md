@@ -50,8 +50,9 @@ Codex のプロジェクト設定へ確認なしで導入する場合は、次�
 npx skills add y2o-lab/storymesh --skill storymesh --agent codex --yes
 ```
 
-配布・公開の詳細は [AI エージェント向けスキルの配布・公開手順](docs/skills-publishing.md)
-を参照してください。
+スキルの本体は [skills/storymesh/SKILL.md](skills/storymesh/SKILL.md) です。公開 GitHub リポジトリから直接配布するため、npm への同梱や別のレジストリへのアップロードは不要です。グローバルに導入する場合は `--global` を追加します。
+
+スキル更新の公開前に `npx skills@latest add . --list` と `mise run handoff` を実行し、`main` に取り込んだ後に `npx skills@latest add y2o-lab/storymesh --list` で検出を確認します。GitHub の `agent-skills` topic は発見性の向上に利用できます。スキルのリリースタグは `skills-vX.Y.Z` としてください。`v*` タグは npm 公開を起動します。
 
 対応する npm 配布環境は、glibc Linux x64/ARM64、macOS x64/ARM64、Windows x64 です。Node.js 18 以上が必要です。
 
@@ -284,8 +285,21 @@ mise run check
 mise run npm-check
 ```
 
-Codex 開発ハーネスの運用方法は [docs/codex-harness.md](docs/codex-harness.md) を参照してください。
-npm 公開を行うメンテナー向けの手順は [npm 公開手順](docs/npm-publishing.md) を参照してください。
+### Codex ハーネス
+
+機械的な変更は `scripts/codex-task fast`、通常の開発は `standard`、複雑な作業は `deep` を使います。選択済みのモデルは維持します。非対話実行には `--exec` を追加します。プロジェクト設定とフックにはリポジトリの信頼設定が必要です。clone 後やフック変更後は Codex CLI の `/hooks` を使ってください。
+
+```sh
+scripts/codex-task standard --json-log .codex-runs/task.jsonl \
+  "Implement the accepted task and run mise run handoff"
+scripts/codex-metrics .codex-runs/task.jsonl
+```
+
+ログは Git の管理対象外です。類似のタスク間で非キャッシュ入力、出力、推論トークン、キャッシュヒット率を比較します。SessionStart フックは変更パスを表示し、Stop フックは `.codex-runs/` の検証記録を確認します。後から編集すると記録は無効になります。検証ゲートの選択は [handoff スキル](.agents/skills/storymesh-handoff/SKILL.md) に定義しています。
+
+### npm リリース
+
+管理者設定、初回 staging、バージョン選択、タグ公開、失敗時の復旧は [npm リリース用スキル](.agents/skills/storymesh-npm-release/SKILL.md) に集約しています。ビルドと公開の動作は [リリース workflow](.github/workflows/release.yml) が定義します。
 
 ### 依存関係の更新
 

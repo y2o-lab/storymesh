@@ -49,7 +49,9 @@ To install it in your project's Codex configuration without confirmation:
 npx skills add y2o-lab/storymesh --skill storymesh --agent codex --yes
 ```
 
-See the [AI agent skill distribution and publishing guide](docs/skills-publishing.md) for details (in Japanese).
+The skill lives in [skills/storymesh/SKILL.md](skills/storymesh/SKILL.md) and is distributed directly from the public GitHub repository; no npm bundle or separate registry upload is needed. Add `--global` for a global installation.
+
+Before publishing a skill update, run `npx skills@latest add . --list` and `mise run handoff`, merge to `main`, then check discovery with `npx skills@latest add y2o-lab/storymesh --list`. The `agent-skills` GitHub topic can help discovery. If tagging a skill release, use `skills-vX.Y.Z`; `v*` tags trigger npm publishing.
 
 The npm distribution supports glibc Linux x64/ARM64, macOS x64/ARM64, and Windows x64. Node.js 18 or later is required.
 
@@ -280,7 +282,21 @@ mise run check
 mise run npm-check
 ```
 
-See [docs/codex-harness.md](docs/codex-harness.md) for the Codex development harness guide, and the [npm publishing guide](docs/npm-publishing.md) for maintainer release instructions (both in Japanese).
+### Codex harness
+
+Use `scripts/codex-task fast`, `standard`, or `deep` for mechanical changes, normal development, or complex work. The wrapper preserves the selected model; add `--exec` for non-interactive execution. Project configuration and hooks require a trusted repository; use `/hooks` in Codex CLI after cloning or changing hooks.
+
+```sh
+scripts/codex-task standard --json-log .codex-runs/task.jsonl \
+  "Implement the accepted task and run mise run handoff"
+scripts/codex-metrics .codex-runs/task.jsonl
+```
+
+Logs are ignored by Git. Compare uncached input, output, reasoning tokens, and cache-hit rates across similar tasks. The SessionStart hook reports dirty paths; the Stop hook checks verification evidence in `.codex-runs/`. Later edits invalidate that evidence. Gate selection is defined in the [handoff skill](.agents/skills/storymesh-handoff/SKILL.md).
+
+### npm releases
+
+Maintainer setup, first-release staging, version selection, tag publishing, and recovery are documented in the [npm release skill](.agents/skills/storymesh-npm-release/SKILL.md). The [release workflow](.github/workflows/release.yml) defines build and publishing behavior.
 
 ### Dependency updates
 

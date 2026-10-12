@@ -79,7 +79,7 @@ jobs:
           path: target/${{ matrix.target }}/release/${{ matrix.binary }}
           if-no-files-found: error
 
-  publish:
+  stage:
     needs: build
     if: github.event_name == 'push' && github.ref_type == 'tag'
     runs-on: ubuntu-latest
@@ -97,13 +97,13 @@ jobs:
           node-version: 24
           registry-url: https://registry.npmjs.org
           package-manager-cache: false
-      - name: Check npm trusted publishing support
+      - name: Check npm trusted publishing and staging support
         run: |
           npm --version
-          node -e "const { execFileSync } = require('node:child_process'); const [major, minor, patch] = execFileSync('npm', ['--version'], { encoding: 'utf8' }).trim().split('.').map(Number); if (major < 11 || (major === 11 && (minor < 5 || (minor === 5 && patch < 1)))) process.exit(1)"
+          node -e "const { execFileSync } = require('node:child_process'); const [major, minor] = execFileSync('npm', ['--version'], { encoding: 'utf8' }).trim().split('.').map(Number); if (major < 11 || (major === 11 && minor < 15)) process.exit(1)"
       - name: Prepare package tarballs
         run: node scripts/npm-packages.mjs artifacts release-npm
-      - name: Publish platform packages, then the CLI package
+      - name: Stage platform packages, then the CLI package
         # Remove --skip-windows here and below after npm clears the Windows package.
         run: node scripts/publish-npm-packages.mjs release-npm --skip-windows
 
@@ -138,13 +138,13 @@ jobs:
             echo "Set the npm Environment secret NPM_TOKEN to a stage-only granular token (Bypass 2FA disabled)."
             exit 1
           fi
-          node scripts/publish-npm-packages.mjs release-npm --stage --skip-windows
+          node scripts/publish-npm-packages.mjs release-npm --check-staged --skip-windows
 
   github-release:
-    needs: [publish, bootstrap-stage]
+    needs: [stage, bootstrap-stage]
     if: >-
       always() && !cancelled() &&
-      (needs.publish.result == 'success' || needs.bootstrap-stage.result == 'success')
+      (needs.stage.result == 'success' || needs.bootstrap-stage.result == 'success')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -153,8 +153,8 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 24
-      - name: Create release notes or publish the existing draft
+      - name: Create draft release notes
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_DRAFT: ${{ needs.bootstrap-stage.result == 'success' }}
+          RELEASE_DRAFT: 'true'
         run: node scripts/github-release.mjs

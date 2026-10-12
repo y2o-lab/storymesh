@@ -55,6 +55,7 @@ for (const [version, expectedTag] of [
       );
       assert.equal(result.status, 0, result.stderr);
       assert.deepEqual(JSON.parse(readFileSync(log, "utf8")), [
+        "stage",
         "publish",
         packageDirectory,
         "--tag",

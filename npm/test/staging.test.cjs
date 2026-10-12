@@ -5,7 +5,7 @@ const path = require("node:path");
 const { spawnSync } = require("node:child_process");
 const test = require("node:test");
 
-function runPublisher({ stage = true, staged = [], published = [], listError = false, viewError = false, publishError = false, windowsError = false, extraArgs } = {}) {
+function runPublisher({ checkStaged = false, staged = [], published = [], listError = false, viewError = false, publishError = false, windowsError = false, extraArgs } = {}) {
   const root = mkdtempSync(path.join(os.tmpdir(), "storymesh-stage-test-"));
   try {
     const packages = path.join(root, "packages");
@@ -41,7 +41,7 @@ if (args[0] === 'stage' && args[1] === 'list') {
     const result = spawnSync(process.execPath, [
       path.resolve(__dirname, "../../scripts/publish-npm-packages.mjs"),
       packages,
-      ...(extraArgs ?? (stage ? ["--stage"] : [])),
+      ...(extraArgs ?? (checkStaged ? ["--check-staged"] : [])),
     ], {
       encoding: "utf8",
       env: {
@@ -58,7 +58,7 @@ if (args[0] === 'stage' && args[1] === 'list') {
   }
 }
 
-test("bootstrap stages platform packages before the CLI with the prerelease dist-tag", () => {
+test("OIDC stages platform packages before the CLI without querying the interactive staging API", () => {
   const result = runPublisher();
   assert.equal(result.status, 0, result.stderr);
   assert.deepEqual(result.calls.filter((args) => args.includes("publish")), [
@@ -66,11 +66,13 @@ test("bootstrap stages platform packages before the CLI with the prerelease dist
     ["stage", "publish", path.join(result.packages, "storymesh-windows-x64"), "--tag", "beta"],
     ["stage", "publish", path.join(result.packages, "storymesh"), "--tag", "beta"],
   ]);
+  assert.equal(result.calls.some((args) => args[0] === "stage" && args[1] === "list"), false);
   assert.match(result.stdout, /approve the staged platform packages before storymesh/);
 });
 
 test("bootstrap skips both staged and already published versions on rerun", () => {
   const result = runPublisher({
+    checkStaged: true,
     staged: [{ packageName: "storymesh-linux-x64", version: "0.2.0-beta.1" }],
     published: ["storymesh-windows-x64@0.2.0-beta.1", "storymesh@0.2.0-beta.1"],
   });
@@ -79,14 +81,14 @@ test("bootstrap skips both staged and already published versions on rerun", () =
 });
 
 test("other staged versions do not prevent staging the requested version", () => {
-  const result = runPublisher({ staged: [{ packageName: "storymesh", version: "0.2.0-beta.2" }] });
+  const result = runPublisher({ checkStaged: true, staged: [{ packageName: "storymesh", version: "0.2.0-beta.2" }] });
   assert.equal(result.status, 0, result.stderr);
   assert.equal(result.calls.filter((args) => args.includes("publish")).length, 3);
 });
 
 for (const scenario of [{ listError: true }, { staged: {} }, { viewError: true }]) {
   test(`bootstrap stops without staging on lookup failure ${JSON.stringify(scenario)}`, () => {
-    const result = runPublisher(scenario);
+    const result = runPublisher({ ...scenario, checkStaged: true });
     assert.notEqual(result.status, 0);
     assert.equal(result.calls.filter((args) => args.includes("publish")).length, 0);
   });
@@ -99,34 +101,19 @@ test("failed platform staging prevents submission of the CLI", () => {
   assert.equal(result.calls.filter((args) => args.includes("publish")).length, 1);
 });
 
-test("normal publishing never queries the token-authenticated staging API", () => {
-  const result = runPublisher({ stage: false, listError: true });
-  assert.equal(result.status, 0, result.stderr);
-  assert.equal(result.calls.some((args) => args[0] === "stage"), false);
-  assert.deepEqual(result.calls.filter((args) => args[0] === "publish"), [
-    ["publish", path.join(result.packages, "storymesh-linux-x64"), "--tag", "beta"],
-    ["publish", path.join(result.packages, "storymesh-windows-x64"), "--tag", "beta"],
-    ["publish", path.join(result.packages, "storymesh"), "--tag", "beta"],
-  ]);
-});
-
-for (const stage of [false, true]) {
-  test(`Windows exclusion allows ${stage ? "staging" : "publishing"} the CLI despite Windows rejection`, () => {
-    const result = runPublisher({
-      stage,
-      windowsError: true,
-      extraArgs: [...(stage ? ["--stage"] : []), "--skip-windows"],
-    });
-    assert.equal(result.status, 0, result.stderr);
-    assert.equal(result.calls.some((args) => args.some((arg) => arg.includes("storymesh-windows-x64"))), false);
-    const command = stage ? ["stage", "publish"] : ["publish"];
-    assert.deepEqual(result.calls.filter((args) => args.includes("publish")), [
-      [...command, path.join(result.packages, "storymesh-linux-x64"), "--tag", "beta"],
-      [...command, path.join(result.packages, "storymesh"), "--tag", "beta"],
-    ]);
-    assert.match(result.stdout, /storymesh-windows-x64@0\.2\.0-beta\.1 is temporarily excluded/);
+test("Windows exclusion allows staging the CLI despite Windows rejection", () => {
+  const result = runPublisher({
+    windowsError: true,
+    extraArgs: ["--skip-windows"],
   });
-}
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.calls.some((args) => args.some((arg) => arg.includes("storymesh-windows-x64"))), false);
+  assert.deepEqual(result.calls.filter((args) => args.includes("publish")), [
+    ["stage", "publish", path.join(result.packages, "storymesh-linux-x64"), "--tag", "beta"],
+    ["stage", "publish", path.join(result.packages, "storymesh"), "--tag", "beta"],
+  ]);
+  assert.match(result.stdout, /storymesh-windows-x64@0\.2\.0-beta\.1 is temporarily excluded/);
+});
 
 test("unknown options fail before contacting npm", () => {
   const result = runPublisher({ extraArgs: ["--stgae"] });

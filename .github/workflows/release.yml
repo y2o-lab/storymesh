@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       bootstrap_stage:
-        description: Stage the first release using NPM_TOKEN; approve all six packages on npmjs.com
+        description: Stage the first release using NPM_TOKEN; approve the included packages on npmjs.com
         type: boolean
         default: false
 
@@ -104,7 +104,8 @@ jobs:
       - name: Prepare package tarballs
         run: node scripts/npm-packages.mjs artifacts release-npm
       - name: Publish platform packages, then the CLI package
-        run: node scripts/publish-npm-packages.mjs release-npm
+        # Remove --skip-windows here and below after npm clears the Windows package.
+        run: node scripts/publish-npm-packages.mjs release-npm --skip-windows
 
   bootstrap-stage:
     needs: build
@@ -137,7 +138,7 @@ jobs:
             echo "Set the npm Environment secret NPM_TOKEN to a stage-only granular token (Bypass 2FA disabled)."
             exit 1
           fi
-          node scripts/publish-npm-packages.mjs release-npm --stage
+          node scripts/publish-npm-packages.mjs release-npm --stage --skip-windows
 
   github-release:
     needs: [publish, bootstrap-stage]

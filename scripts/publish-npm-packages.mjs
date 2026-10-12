@@ -6,9 +6,11 @@ import path from "node:path";
 import { distTagForVersion } from "./npm-release-version.mjs";
 
 const root = path.resolve(process.argv[2] ?? "");
-const stage = process.argv[3] === "--stage";
-if (!process.argv[2] || process.argv.length > 4 || (process.argv[3] && !stage)) {
-  console.error("usage: scripts/publish-npm-packages.mjs PREPARED_PACKAGES_DIRECTORY [--stage]");
+const options = process.argv.slice(3);
+const stage = options.includes("--stage");
+const skipWindows = options.includes("--skip-windows");
+if (!process.argv[2] || options.some((option) => !["--stage", "--skip-windows"].includes(option))) {
+  console.error("usage: scripts/publish-npm-packages.mjs PREPARED_PACKAGES_DIRECTORY [--stage] [--skip-windows]");
   process.exit(2);
 }
 
@@ -27,6 +29,10 @@ for (const directory of directories) {
   if (manifest.version !== version) throw new Error(`${manifest.name} has an unexpected version`);
 
   const spec = `${manifest.name}@${version}`;
+  if (skipWindows && manifest.name === "storymesh-windows-x64") {
+    console.log(`${spec} is temporarily excluded from npm ${stage ? "staging" : "publishing"}; skipping.`);
+    continue;
+  }
   const existing = spawnSync("npm", ["view", spec, "version", "--json"], { encoding: "utf8" });
   if (existing.status === 0) {
     console.log(`${spec} is already published; skipping.`);
@@ -49,4 +55,4 @@ for (const directory of directories) {
   if (published.status !== 0) throw new Error(`npm ${command.join(" ")} failed for ${spec}`);
 }
 
-if (stage) console.log("Review Staged Packages on npmjs.com with 2FA: approve the five platform packages before storymesh.");
+if (stage) console.log("Review Staged Packages on npmjs.com with 2FA: approve the staged platform packages before storymesh.");

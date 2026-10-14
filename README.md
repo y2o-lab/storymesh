@@ -69,7 +69,7 @@ Before publishing a skill update, run `npx skills@latest add . --list` and `mise
 
 The npm distribution supports glibc Linux x64/ARM64, macOS x64/ARM64, and Windows x64. Node.js 18 or later is required.
 
-Windows x64 npm publication is temporarily paused while npm reviews the package's spam classification. New releases publish the macOS/Linux packages and `storymesh`; Windows cannot run a release until its matching `storymesh-windows-x64` version is published.
+Windows x64 npm releases use `storymesh-windows-x64`. All five platform packages must have the matching release version published before approving `storymesh`.
 
 To build from source, install [mise](https://mise.jdx.dev/) and run these commands in your checkout:
 
@@ -314,7 +314,9 @@ Logs are ignored by Git. Compare uncached input, output, reasoning tokens, and c
 
 Maintainer setup, first-release staging, version selection, tag publishing, and recovery are documented in the [npm release skill](.agents/skills/storymesh-npm-release/SKILL.md). The [release workflow](.github/workflows/release.yml) defines build and publishing behavior.
 
-The workflow currently passes `--skip-windows` to both tag and bootstrap staging, submitting four macOS/Linux platform packages and the CLI package. Windows builds, tarballs, optional dependencies, and launcher support remain in place. After npm clears the Windows package, remove `--skip-windows` from both commands in `.github/workflows/release.yml` to resume submission of all six packages in subsequent releases. Rerunning an old tag uses that tag's workflow and retains its exclusion; do not move release tags to change this behavior.
+Both tag and bootstrap staging submit all five platform packages, including `storymesh-windows-x64`, followed by the CLI package. npm support cleared the Windows package name block and transferred write access after publishing `0.0.1-security` placeholders for `storymesh-windows-x64` and `storymesh-win32-x64`. Storymesh uses only `storymesh-windows-x64`.
+
+For the first Windows release after the unblock, choose a new version that has never been attempted for that package; npm support confirmed that previously attempted versions cannot be reused, even if they are absent from the registry. Keep all six npm packages and the Rust version in sync as described in the release skill. Configure the trusted publisher for `storymesh-windows-x64` with owner `y2o-lab`, repository `storymesh`, workflow `release.yml`, environment `npm`, and stage-only permission before tag staging. If bootstrapping with a temporary token, ensure it includes write access to this existing package. Rerunning an old tag uses that tag's workflow and retains its Windows exclusion; do not move release tags to change this behavior.
 
 Tag runs stage the included packages through npm trusted publishing. After successful staging, the workflow creates a draft GitHub Release named `vVERSION` targeting that tag's commit. Review and approve the platform packages on npmjs.com with 2FA before approving `storymesh`. Verify all included versions and dist-tags, then publish the draft GitHub Release manually. Build-only manual runs and failed staging do not create releases. A rerun cannot query pending stages through OIDC; approve any already staged packages before retrying a partial run. Reruns reuse an existing draft, and prerelease versions are marked as GitHub prereleases.
 

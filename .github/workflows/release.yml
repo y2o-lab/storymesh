@@ -104,8 +104,7 @@ jobs:
       - name: Prepare package tarballs
         run: node scripts/npm-packages.mjs artifacts release-npm
       - name: Stage platform packages, then the CLI package
-        # Remove --skip-windows here and below after npm clears the Windows package.
-        run: node scripts/publish-npm-packages.mjs release-npm --skip-windows
+        run: node scripts/publish-npm-packages.mjs release-npm
 
   bootstrap-stage:
     needs: build
@@ -138,7 +137,7 @@ jobs:
             echo "Set the npm Environment secret NPM_TOKEN to a stage-only granular token (Bypass 2FA disabled)."
             exit 1
           fi
-          node scripts/publish-npm-packages.mjs release-npm --check-staged --skip-windows
+          node scripts/publish-npm-packages.mjs release-npm --check-staged
 
   github-release:
     needs: [stage, bootstrap-stage]

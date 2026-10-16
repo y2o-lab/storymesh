@@ -1,0 +1,20 @@
+$ npx --no-install storymesh --version
+storymesh 0.1.0
+[exit 0]
+
+$ npx --no-install storymesh --help
+Audit Storybook story coverage and report gaps.
+
+Usage: storymesh [COMMAND]
+
+Commands:
+  check     Find components that do not have a corresponding story file
+  coverage  Calculate the ratio of components with at least one story file
+  report    Show covered and missing component totals
+  spec      Check UI state specifications or create draft specifications
+  help      Print this message or the help of the given subcommand(s)
+
+Options:
+  -h, --help     Print help
+  -V, --version  Print version
+[exit 0]

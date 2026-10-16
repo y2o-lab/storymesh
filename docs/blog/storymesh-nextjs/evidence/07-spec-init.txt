@@ -1,0 +1,18 @@
+$ npx --no-install storymesh spec init src/components --framework react --spec-dir .demo/drafts
+Created .demo/drafts/Button.yaml
+Created .demo/drafts/PlanCard.yaml
+Created .demo/drafts/UsageMeter.yaml
+Created 3 spec(s) / Updated 0 spec(s) / Skipped 0
+Existing stories were not changed. Fill the draft from a fresh Storybook index; `storymesh spec import` can bootstrap an empty spec directory.
+[exit 0]
+
+$ npx --no-install storymesh spec check --spec-dir .demo/drafts
+error: .demo/drafts/Button.yaml: stories: [] is a draft; list required UI states
+[exit 2]
+
+$ npx --no-install storymesh spec init .demo/fresh --framework react --with-stories --spec-dir .demo/fresh-specs
+Created .demo/fresh/FreshCard.stories.tsx
+Created .demo/fresh-specs/FreshCard.yaml
+Created 1 spec(s) / Updated 0 spec(s) / Skipped 0
+Generate a fresh Storybook index and run `storymesh spec check` to verify registration.
+[exit 0]

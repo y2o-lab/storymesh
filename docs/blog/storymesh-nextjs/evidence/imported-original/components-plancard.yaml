@@ -1,0 +1,10 @@
+version: 1
+component:
+  id: components-plancard
+  name: PlanCard
+  title: Components/PlanCard
+stories:
+- id: current
+  required: true
+- id: default
+  required: true

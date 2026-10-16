@@ -1,0 +1,10 @@
+import { FreshCard as Component } from './FreshCard';
+
+const meta = {
+  title: 'Components/FreshCard',
+  component: Component,
+};
+
+export default meta;
+
+export const Default = {};

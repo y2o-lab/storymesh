@@ -1,0 +1,9 @@
+<!doctype html><html lang="ja"><meta charset="utf-8"><title>Storymesh 実行ログ 03-ignore</title><style>*{box-sizing:border-box}body{margin:0;background:#0e1723;color:#dee8ee;padding:36px;font:16px/1.6 ui-monospace,Menlo,monospace}header{border-bottom:1px solid #304354;padding-bottom:20px;margin-bottom:24px}h1{font:700 24px Arial;margin:8px 0}header p{font:12px Arial;color:#94a5b7}section{margin:0 0 28px}.command{color:#8dd3b0;font-weight:700;overflow-wrap:anywhere}pre{margin:9px 0;white-space:pre-wrap;overflow-wrap:anywhere}.exit{color:#91a1b3;font-size:13px}</style><header><h1>Storymesh / 03-ignore</h1><p>実際の CLI 出力を保存したログビューアー · npm storymesh 0.1.0 · 出力は未編集（ANSI 色のみ除去）</p></header><section><div class="command">$ npx --no-install storymesh check src/components --ignore UsageMeter.tsx</div><pre>All 2 React components have stories.
+</pre><div class="exit">exit code: 0</div></section><section><div class="command">$ npx --no-install storymesh check src/components --ignore-file .storymesh-manual-ignore</div><pre>All 2 React components have stories.
+</pre><div class="exit">exit code: 0</div></section><section><div class="command">$ npx --no-install storymesh report src/components --ignore "!generated/PreviewCard.tsx"</div><pre>React Storybook coverage: 50.0% (2/4 components)
+Missing: 2
+UsageMeter.tsx
+generated/PreviewCard.tsx
+</pre><div class="exit">exit code: 0</div></section><section><div class="command">$ cd src/components &amp;&amp; npx --no-install storymesh check</div><pre>Missing stories for 1 React component(s):
+UsageMeter.tsx
+</pre><div class="exit">exit code: 1</div></section></html>

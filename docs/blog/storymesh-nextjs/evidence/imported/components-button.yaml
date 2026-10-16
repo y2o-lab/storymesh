@@ -1,0 +1,12 @@
+version: 1
+component:
+  id: components-button
+  name: Button
+  title: Components/Button
+stories:
+  - id: default
+    required: true
+  - id: disabled
+    required: true
+  - id: loading
+    required: true

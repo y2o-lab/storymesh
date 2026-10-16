@@ -1,0 +1,33 @@
+$ npx --no-install storymesh spec import --index ../../docs/blog/storymesh-nextjs/evidence/index-before.json --spec-dir .demo/imported
+Created .demo/imported/components-button.yaml
+Created .demo/imported/components-plancard.yaml
+Created .demo/imported/components-usagemeter.yaml
+Created 3 spec(s) / Updated 0 spec(s) / Skipped 0
+[exit 0]
+
+$ npx --no-install storymesh spec import --index ../../docs/blog/storymesh-nextjs/evidence/index-before.json --spec-dir .demo/imported
+Created 0 spec(s) / Updated 0 spec(s) / Skipped 3
+[exit 0]
+
+$ npx --no-install storymesh spec import --spec-dir .demo/imported --merge
+error: .demo/imported/components-button.yaml: --merge supports only a simple stories block list at the end of the file
+[exit 2]
+
+$ npx --no-install storymesh spec import --spec-dir .demo/imported --merge
+Updated .demo/imported/components-button.yaml
+Created 0 spec(s) / Updated 1 spec(s) / Skipped 2
+[exit 0]
+
+$ npx --no-install storymesh spec check --spec-dir .demo/imported
+Storymesh UI Spec
+
+No issues found.
+
+Summary
+  Components checked: 3
+  Stories checked:    6
+  Errors:             0
+  Warnings:           0
+
+PASS
+[exit 0]

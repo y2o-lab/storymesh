@@ -1,0 +1,5 @@
+version: 1
+component:
+  id: usagemeter
+  name: UsageMeter
+stories: [] # TODO: list required UI states

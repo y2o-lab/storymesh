@@ -1,0 +1,8 @@
+version: 1
+component:
+  id: components-usagemeter
+  name: UsageMeter
+  title: Components/UsageMeter
+stories:
+  - id: default
+    required: true

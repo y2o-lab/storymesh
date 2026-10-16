@@ -283,6 +283,10 @@ pnpm storymesh:ignore-file
 - Non-component React `.jsx` / `.tsx` files, and Vue pages or layouts, may count as components.
 - Components without the `.component` suffix that import Angular's `Component` under an alias are not detected.
 
+## Working sample and blog material
+
+The [Next.js / React walkthrough (Japanese)](docs/blog/storymesh-nextjs/article.md) includes a working sample, Storybook screenshots, and recorded CLI scenarios. See the [sample instructions](examples/nextjs-storymesh/README.md) and [image catalog](docs/blog/storymesh-nextjs/screenshots.md).
+
 ## Development
 
 Run development commands through `mise`. Harness checks also require `jq`.

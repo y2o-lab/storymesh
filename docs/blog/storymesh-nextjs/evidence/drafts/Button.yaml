@@ -1,0 +1,5 @@
+version: 1
+component:
+  id: button
+  name: Button
+stories: [] # TODO: list required UI states

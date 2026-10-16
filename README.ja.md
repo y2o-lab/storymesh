@@ -284,6 +284,10 @@ pnpm storymesh:ignore-file
 - React の非コンポーネント `.jsx` / `.tsx` や、Vue の画面・レイアウトもコンポーネントとして数える場合があります。
 - Angular の `Component` を別名 import した suffix-less component は検出しません。
 
+## 実動サンプルとブログ資料
+
+Next.js / React のサンプル、Storybook の実画面、Storymesh の全コマンドの実行結果は [ブログ用資料](docs/blog/storymesh-nextjs/article.md) にまとめています。[サンプルの実行手順](examples/nextjs-storymesh/README.md) と [画像一覧](docs/blog/storymesh-nextjs/screenshots.md) も利用できます。
+
 ## 開発
 
 開発用コマンドは `mise` 経由で実行します。ハーネス検査には `jq` も必要です。

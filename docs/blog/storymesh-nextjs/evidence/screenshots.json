@@ -1,0 +1,90 @@
+{
+  "viewport": "1440×960 UI / 1280×900 logs",
+  "browser": "149.0.7827.55",
+  "failures": [],
+  "shots": [
+    {
+      "file": "01-nextjs-app.png",
+      "description": "Next.js アプリのプラン管理画面",
+      "url": "http://127.0.0.1:3000/"
+    },
+    {
+      "file": "02-nextjs-interaction.png",
+      "description": "招待操作後、利用人数が 7→8 名に更新",
+      "url": "http://127.0.0.1:3000/"
+    },
+    {
+      "file": "03-storybook-plancard.png",
+      "description": "PlanCard の実描画と Controls",
+      "url": "http://127.0.0.1:6006/?path=/story/components-plancard--default"
+    },
+    {
+      "file": "04-storybook-loading.png",
+      "description": "required として追加した Loading Story",
+      "url": "http://127.0.0.1:6006/?path=/story/components-button--loading"
+    },
+    {
+      "file": "05-storybook-generated.png",
+      "description": "Storymesh が生成した UsageMeter の Default を実描画",
+      "url": "http://127.0.0.1:6006/?path=/story/components-usagemeter--default"
+    },
+    {
+      "file": "06-storybook-current.png",
+      "description": "Current Story の disabled UI",
+      "url": "http://127.0.0.1:6006/?path=/story/components-plancard--current"
+    },
+    {
+      "file": "cli-01-install.png",
+      "description": "保存した実際の CLI 実行結果のログビューアー",
+      "url": "evidence/01-install.html"
+    },
+    {
+      "file": "cli-02-missing.png",
+      "description": "保存した実際の CLI 実行結果のログビューアー",
+      "url": "evidence/02-missing.html"
+    },
+    {
+      "file": "cli-03-ignore.png",
+      "description": "保存した実際の CLI 実行結果のログビューアー",
+      "url": "evidence/03-ignore.html"
+    },
+    {
+      "file": "cli-04-generate.png",
+      "description": "保存した実際の CLI 実行結果のログビューアー",
+      "url": "evidence/04-generate.html"
+    },
+    {
+      "file": "cli-05-spec-fail.png",
+      "description": "保存した実際の CLI 実行結果のログビューアー",
+      "url": "evidence/05-spec-fail.html"
+    },
+    {
+      "file": "cli-06-spec-pass.png",
+      "description": "保存した実際の CLI 実行結果のログビューアー",
+      "url": "evidence/06-spec-pass.html"
+    },
+    {
+      "file": "cli-07-spec-init.png",
+      "description": "保存した実際の CLI 実行結果のログビューアー",
+      "url": "evidence/07-spec-init.html"
+    },
+    {
+      "file": "cli-08-spec-import.png",
+      "description": "保存した実際の CLI 実行結果のログビューアー",
+      "url": "evidence/08-spec-import.html"
+    },
+    {
+      "file": "cli-09-warning-error.png",
+      "description": "保存した実際の CLI 実行結果のログビューアー",
+      "url": "evidence/09-warning-error.html"
+    }
+  ],
+  "assertions": [
+    "Next.js renders",
+    "Invite updates member usage to 80%",
+    "PlanCard Default renders",
+    "Loading renders and is disabled",
+    "Generated UsageMeter renders",
+    "Current renders"
+  ]
+}

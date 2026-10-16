@@ -1,0 +1,18 @@
+$ npx --no-install storymesh spec check --spec-dir .demo/warning
+Storymesh UI Spec
+
+Undeclared stories (WARNING)
+  ? Button/disabled
+
+Summary
+  Components checked: 1
+  Stories checked:    3
+  Errors:             0
+  Warnings:           1
+
+PASS
+[exit 0]
+
+$ npx --no-install storymesh spec check --index .demo/does-not-exist.json
+error: .demo/does-not-exist.json: No such file or directory (os error 2)
+[exit 2]

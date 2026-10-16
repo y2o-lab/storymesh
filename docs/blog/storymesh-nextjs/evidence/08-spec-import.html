@@ -1,0 +1,20 @@
+<!doctype html><html lang="ja"><meta charset="utf-8"><title>Storymesh 実行ログ 08-spec-import</title><style>*{box-sizing:border-box}body{margin:0;background:#0e1723;color:#dee8ee;padding:36px;font:16px/1.6 ui-monospace,Menlo,monospace}header{border-bottom:1px solid #304354;padding-bottom:20px;margin-bottom:24px}h1{font:700 24px Arial;margin:8px 0}header p{font:12px Arial;color:#94a5b7}section{margin:0 0 28px}.command{color:#8dd3b0;font-weight:700;overflow-wrap:anywhere}pre{margin:9px 0;white-space:pre-wrap;overflow-wrap:anywhere}.exit{color:#91a1b3;font-size:13px}</style><header><h1>Storymesh / 08-spec-import</h1><p>実際の CLI 出力を保存したログビューアー · npm storymesh 0.1.0 · 出力は未編集（ANSI 色のみ除去）</p></header><section><div class="command">$ npx --no-install storymesh spec import --index ../../docs/blog/storymesh-nextjs/evidence/index-before.json --spec-dir .demo/imported</div><pre>Created .demo/imported/components-button.yaml
+Created .demo/imported/components-plancard.yaml
+Created .demo/imported/components-usagemeter.yaml
+Created 3 spec(s) / Updated 0 spec(s) / Skipped 0
+</pre><div class="exit">exit code: 0</div></section><section><div class="command">$ npx --no-install storymesh spec import --index ../../docs/blog/storymesh-nextjs/evidence/index-before.json --spec-dir .demo/imported</div><pre>Created 0 spec(s) / Updated 0 spec(s) / Skipped 3
+</pre><div class="exit">exit code: 0</div></section><section><div class="command">$ npx --no-install storymesh spec import --spec-dir .demo/imported --merge</div><pre>error: .demo/imported/components-button.yaml: --merge supports only a simple stories block list at the end of the file
+</pre><div class="exit">exit code: 2</div></section><section><p style="color:#a8bacb">直前に生成 YAML の stories リストを 2 スペース下げた（値は変更なし）。</p><div class="command">$ npx --no-install storymesh spec import --spec-dir .demo/imported --merge</div><pre>Updated .demo/imported/components-button.yaml
+Created 0 spec(s) / Updated 1 spec(s) / Skipped 2
+</pre><div class="exit">exit code: 0</div></section><section><div class="command">$ npx --no-install storymesh spec check --spec-dir .demo/imported</div><pre>Storymesh UI Spec
+
+No issues found.
+
+Summary
+  Components checked: 3
+  Stories checked:    6
+  Errors:             0
+  Warnings:           0
+
+PASS
+</pre><div class="exit">exit code: 0</div></section></html>

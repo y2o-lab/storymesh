@@ -1,0 +1,8 @@
+version: 1
+component:
+  id: freshcard
+  name: FreshCard
+  title: Components/FreshCard
+stories:
+- id: default
+  required: true

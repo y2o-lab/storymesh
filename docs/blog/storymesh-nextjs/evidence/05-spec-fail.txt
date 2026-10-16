@@ -1,0 +1,22 @@
+$ npx --no-install storybook index -o storybook-static/index.json
+│
+│  storybook v10.6.2
+
+│
+●  Writing index to storybook-static/index.json
+[exit 0]
+
+$ npx --no-install storymesh spec check
+Storymesh UI Spec
+
+Missing stories
+  ✗ Button/loading
+
+Summary
+  Components checked: 1
+  Stories checked:    2
+  Errors:             1
+  Warnings:           0
+
+FAIL
+[exit 1]

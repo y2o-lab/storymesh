@@ -1,0 +1,19 @@
+$ npx --no-install storymesh check src/components --ignore UsageMeter.tsx
+All 2 React components have stories.
+[exit 0]
+
+$ npx --no-install storymesh check src/components --ignore-file .storymesh-manual-ignore
+All 2 React components have stories.
+[exit 0]
+
+$ npx --no-install storymesh report src/components --ignore "!generated/PreviewCard.tsx"
+React Storybook coverage: 50.0% (2/4 components)
+Missing: 2
+UsageMeter.tsx
+generated/PreviewCard.tsx
+[exit 0]
+
+$ cd src/components && npx --no-install storymesh check
+Missing stories for 1 React component(s):
+UsageMeter.tsx
+[exit 1]

@@ -150,6 +150,7 @@ fn is_ignored_directory(name: &std::ffi::OsStr) -> bool {
             ".git"
                 | ".next"
                 | ".storybook"
+                | ".svelte-kit"
                 | "build"
                 | "coverage"
                 | "dist"

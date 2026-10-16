@@ -111,3 +111,41 @@ fn check_excludes_patterns_and_additional_ignore_files() {
     assert!(!stdout.contains("Generated.tsx"));
     assert!(!stdout.contains("Legacy.tsx"));
 }
+
+#[test]
+fn svelte_commands_report_coverage_and_generate_only_missing_stories() {
+    let project = TestProject::new();
+    project.add_with_contents("Button.svelte", "<button>Button</button>\n");
+    let native_story = "<!-- existing native story -->\n";
+    project.add_with_contents("Button.stories.svelte", native_story);
+    project.add_with_contents("Card.svelte", "<div>Card</div>\n");
+    let root = project.root.to_str().expect("UTF-8 test path");
+
+    let check = run(&["check", root, "--framework", "svelte"]);
+    assert_eq!(check.status.code(), Some(1));
+    assert!(String::from_utf8_lossy(&check.stdout).contains("1 Svelte component(s):\nCard.svelte"));
+    for command in ["coverage", "report"] {
+        let output = run(&[command, root, "--framework", "svelte"]);
+        assert_eq!(output.status.code(), Some(0));
+        assert!(
+            String::from_utf8_lossy(&output.stdout)
+                .contains("Svelte Storybook coverage: 50.0% (1/2 components)")
+        );
+    }
+
+    let generated = run(&["check", root, "--framework", "svelte", "--generate"]);
+    assert_eq!(generated.status.code(), Some(0));
+    let contents = std::fs::read_to_string(project.root.join("Card.stories.ts"))
+        .expect("generated story reads");
+    assert!(contents.contains("import Component from './Card.svelte';"));
+    assert!(!project.root.join("Button.stories.ts").exists());
+    assert_eq!(
+        std::fs::read_to_string(project.root.join("Button.stories.svelte")).unwrap(),
+        native_story
+    );
+    let recheck = run(&["check", root, "--framework", "svelte"]);
+    assert_eq!(recheck.status.code(), Some(0));
+    assert!(
+        String::from_utf8_lossy(&recheck.stdout).contains("All 2 Svelte components have stories.")
+    );
+}

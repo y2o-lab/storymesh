@@ -1,5 +1,6 @@
 mod angular;
 mod react;
+mod svelte;
 mod vue;
 
 use std::path::Path;
@@ -14,6 +15,7 @@ pub(super) fn is_component(
     match framework {
         Framework::React => Ok(react::is_component(path)),
         Framework::Vue => Ok(vue::is_component(path)),
+        Framework::Svelte => Ok(svelte::is_component(path)),
         Framework::Angular => angular::is_component(root, path),
     }
 }

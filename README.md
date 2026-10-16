@@ -2,7 +2,7 @@
 
 English | [日本語ドキュメント](README.ja.md)
 
-`storymesh` is a Rust CLI that checks whether components have corresponding Storybook story files and reports story coverage. It supports React, Vue, and Angular.
+`storymesh` is a Rust CLI that checks whether components have corresponding Storybook story files and reports story coverage. It supports React, Vue, Svelte, and Angular.
 
 Use it to:
 
@@ -17,6 +17,7 @@ Use it to:
 | --- | --- | --- |
 | React | `.tsx`, `.jsx`, and PascalCase `.ts` / `.js` files | `react` |
 | Vue | `.vue` | `vue` |
+| Svelte | `.svelte` | `svelte` |
 | Angular | `*.component.ts` and `.ts` files with `@Component(...)` | `angular` |
 
 ## Installation
@@ -109,7 +110,7 @@ All 3 React components have stories.
 List components with missing stories. Use this command to detect missing stories in CI.
 
 ```sh
-./target/release/storymesh check [PATH] [--framework react|vue|angular] [--ignore PATTERN] [--ignore-file PATH] [--generate]
+./target/release/storymesh check [PATH] [--framework react|vue|svelte|angular] [--ignore PATTERN] [--ignore-file PATH] [--generate]
 ```
 
 With `--generate`, the command creates a minimal [Component Story Format (CSF)](https://storybook.js.org/docs/api/csf) story next to each component detected as missing a story:
@@ -127,7 +128,7 @@ Card.stories.tsx
 
 With `--generate`, the exit code indicates whether generation succeeded rather than whether stories were missing. It returns `0` if generation succeeds, including when there is nothing to generate, or `2` if generation fails. Running `check` again counts the generated stories as covered. Existing files are never overwritten.
 
-React stories use the component's extension (for example, `Button.tsx` → `Button.stories.tsx`); Vue and Angular stories use `.stories.ts`. For React, the generator recognizes default exports and common named exports matching the filename. If it cannot find an importable export, it creates a `render: () => null` placeholder you can edit in Storybook. Vue assumes a default export, and Angular assumes a conventional class name (for example, `user-card.component.ts` → `UserCardComponent`). Adjust the generated imports if your project's exports differ.
+React stories use the component's extension (for example, `Button.tsx` → `Button.stories.tsx`); Vue, Svelte, and Angular stories use `.stories.ts`. For React, the generator recognizes default exports and common named exports matching the filename. If it cannot find an importable export, it creates a `render: () => null` placeholder you can edit in Storybook. Vue and Svelte use default imports with the component file extension, and Angular assumes a conventional class name (for example, `user-card.component.ts` → `UserCardComponent`). Adjust the generated imports if your project's exports differ.
 
 ### `spec check` / `spec init` / `spec import`
 
@@ -142,7 +143,7 @@ pnpm exec storybook index -o storybook-static/index.json
 ./target/release/storymesh spec check --spec-dir .storymesh/specs --index storybook-static/index.json
 ```
 
-`spec init` requires `--framework react|vue|angular` and creates YAML drafts from components in `.storymesh/specs`. Drafts normally contain `stories: []`; add the required UI states before running `spec check`. With `--with-stories`, components without story files receive a CSF `Default` story and YAML declaring that story as required. Existing story files are not edited. Regenerate the index to confirm that Storybook registers the generated stories.
+`spec init` requires `--framework react|vue|svelte|angular` and creates YAML drafts from components in `.storymesh/specs`. Drafts normally contain `stories: []`; add the required UI states before running `spec check`. With `--with-stories`, components without story files receive a CSF `Default` story and YAML declaring that story as required. Existing story files are not edited. Regenerate the index to confirm that Storybook registers the generated stories.
 
 `spec import` creates YAML files grouped by title from the stories in the index. It skips existing specs without overwriting them. `--merge` appends only new stories to an existing spec with an exactly matching title. To preserve comments and existing `required` values, updates are limited to simple v1 block-style `stories` lists. Anchors, aliases, flow-style lists, and multiple documents are rejected.
 
@@ -248,8 +249,8 @@ pnpm storymesh:ignore-file
 ### Common rules
 
 - Stories are searched for beside the component or in an immediate `stories` / `__stories__` subdirectory.
-- Supported story extensions are `.js`, `.jsx`, `.mjs`, `.cjs`, `.ts`, and `.tsx`.
-- The scanner skips `.git`, `.next`, `.storybook`, `build`, `coverage`, `dist`, `node_modules`, and `target` directories.
+- Supported story extensions are `.js`, `.jsx`, `.mjs`, `.cjs`, `.ts`, `.tsx`, and `.svelte`.
+- The scanner skips `.git`, `.next`, `.storybook`, `.svelte-kit`, `build`, `coverage`, `dist`, `node_modules`, and `target` directories.
 - Files excluded by `.storymeshignore`, `--ignore`, or `--ignore-file` count as neither components nor stories.
 - `*.test.*`, `*.spec.*`, and story files themselves do not count as components.
 
@@ -267,6 +268,19 @@ pnpm storymesh:ignore-file
 - `Button.vue` matches a story with the same name, such as `Button.stories.ts`.
 - The `Button/index.vue` and `Button/Button.stories.ts` layout is also supported.
 
+### Svelte
+
+- `.svelte` files count as components, including lowercase filenames.
+- `Button.svelte` matches `Button.stories.ts`, `Button.stories.js`, or native `Button.stories.svelte` files (and the other supported story extensions).
+- The `Button/index.svelte` and `Button/Button.stories.svelte` layout is also supported, including `stories` / `__stories__` subdirectories.
+- Native stories use [Storybook's Svelte CSF addon](https://storybook.js.org/addons/@storybook/addon-svelte-csf). Generation uses standard CSF `.stories.ts` files with a default import from `./Button.svelte`.
+
+```sh
+./target/release/storymesh check src/lib --framework svelte
+./target/release/storymesh check src/lib --framework svelte --generate
+./target/release/storymesh spec init src/lib --framework svelte --with-stories
+```
+
 ### Angular
 
 - `*.component.ts` files count as components.
@@ -280,7 +294,7 @@ pnpm storymesh:ignore-file
 
 - Stories with names that differ from their components are not matched.
 - MDX documentation does not count toward coverage.
-- Non-component React `.jsx` / `.tsx` files, and Vue pages or layouts, may count as components.
+- Non-component React `.jsx` / `.tsx` files, and Vue or Svelte pages or layouts (including SvelteKit `+page.svelte` / `+layout.svelte`), may count as components.
 - Components without the `.component` suffix that import Angular's `Component` under an alias are not detected.
 
 ## Development

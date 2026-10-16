@@ -37,6 +37,45 @@ fn init_requires_framework_before_creating_files() {
 }
 
 #[test]
+fn svelte_init_generates_matching_specs_and_preserves_native_stories() {
+    let p = TestProject::new();
+    p.add_with_contents("Button.svelte", "<button>Button</button>\n");
+    p.add_with_contents("Card.svelte", "<div>Card</div>\n");
+    p.add_with_contents("Card.stories.svelte", "<!-- existing story -->\n");
+    let out = run(
+        &p,
+        &[
+            "spec",
+            "init",
+            ".",
+            "--framework",
+            "svelte",
+            "--spec-dir",
+            "specs",
+            "--with-stories",
+        ],
+    );
+    assert_eq!(out.status.code(), Some(0), "{}", stderr(&out));
+    let yaml = fs::read_to_string(p.root.join("specs/Button.yaml")).unwrap();
+    assert!(yaml.contains("title: Components/Button"));
+    assert!(yaml.contains("id: default"));
+    let story = fs::read_to_string(p.root.join("Button.stories.ts")).unwrap();
+    assert!(story.contains("import Component from './Button.svelte';"));
+    assert!(story.contains("title: 'Components/Button'"));
+    assert!(story.contains("export const Default = {}"));
+    assert!(!p.root.join("Card.stories.ts").exists());
+    assert!(
+        fs::read_to_string(p.root.join("specs/Card.yaml"))
+            .unwrap()
+            .contains("stories: []")
+    );
+    assert_eq!(
+        fs::read_to_string(p.root.join("Card.stories.svelte")).unwrap(),
+        "<!-- existing story -->\n"
+    );
+}
+
+#[test]
 fn check_reports_missing_and_warning_in_stable_order() {
     let p = TestProject::new();
     p.add_with_contents(

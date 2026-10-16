@@ -2,7 +2,7 @@
 
 [English](README.md) | 日本語
 
-`storymesh` は、コンポーネントに対応する Storybook の story ファイルがあるかを検査し、story coverage を報告する Rust 製 CLI です。React、Vue、Angular に対応しています。
+`storymesh` は、コンポーネントに対応する Storybook の story ファイルがあるかを検査し、story coverage を報告する Rust 製 CLI です。React、Vue、Svelte、Angular に対応しています。
 
 次の用途を想定しています。
 
@@ -17,6 +17,7 @@
 | --- | --- | --- |
 | React | `.tsx`、`.jsx`、PascalCase の `.ts` / `.js` | `react` |
 | Vue | `.vue` | `vue` |
+| Svelte | `.svelte` | `svelte` |
 | Angular | `*.component.ts`、`@Component(...)` を持つ `.ts` | `angular` |
 
 ## インストール
@@ -108,7 +109,7 @@ All 3 React components have stories.
 story がないコンポーネントを一覧表示します。CI で追加漏れを検知する場合に使用します。
 
 ```sh
-./target/release/storymesh check [PATH] [--framework react|vue|angular] [--ignore PATTERN] [--ignore-file PATH] [--generate]
+./target/release/storymesh check [PATH] [--framework react|vue|svelte|angular] [--ignore PATTERN] [--ignore-file PATH] [--generate]
 ```
 
 `--generate` を指定すると、missing として検出した各コンポーネントと同じディレクトリに、最小の [Component Story Format (CSF)](https://storybook.js.org/docs/api/csf) story を生成します。
@@ -126,7 +127,7 @@ Card.stories.tsx
 
 `--generate` 指定時は missing の有無ではなく生成処理の成否を終了コードで示します。すべて生成できた場合（生成対象がない場合を含む）は `0`、生成に失敗した場合は `2` です。生成した story を含めて再度 `check` すると coverage 済みとして扱われます。既存ファイルは上書きしません。
 
-React はコンポーネントと同じ拡張子（例: `Button.tsx` → `Button.stories.tsx`）、Vue と Angular は `.stories.ts` を生成します。React は default export と、ファイル名に対応する一般的な named export を判別します。import 可能な export が見つからない場合は、Storybook 上で編集を始められる `render: () => null` のプレースホルダーを生成します。Vue は default export、Angular は一般的なクラス名（例: `user-card.component.ts` → `UserCardComponent`）を前提とするため、プロジェクトの export が異なる場合は生成後に import を調整してください。
+React はコンポーネントと同じ拡張子（例: `Button.tsx` → `Button.stories.tsx`）、Vue、Svelte、Angular は `.stories.ts` を生成します。React は default export と、ファイル名に対応する一般的な named export を判別します。import 可能な export が見つからない場合は、Storybook 上で編集を始められる `render: () => null` のプレースホルダーを生成します。Vue と Svelte は拡張子付きパスからの default import、Angular は一般的なクラス名（例: `user-card.component.ts` → `UserCardComponent`）を前提とするため、プロジェクトの export が異なる場合は生成後に import を調整してください。
 
 ### `spec check` / `spec init` / `spec import`
 
@@ -141,7 +142,7 @@ pnpm exec storybook index -o storybook-static/index.json
 ./target/release/storymesh spec check --spec-dir .storymesh/specs --index storybook-static/index.json
 ```
 
-`spec init` は `--framework react|vue|angular` を必須とし、コンポーネントから `.storymesh/specs` に YAML の下書きを作ります。通常は `stories: []` なので、必要な UI 状態を書いてから `spec check` してください。`--with-stories` は story ファイルがまだないコンポーネントに CSF の `Default` を作り、その Story を required とする YAML を作ります。既存 story ファイルは編集しません。生成した story が Storybook に登録されるかは index を再生成して確認してください。
+`spec init` は `--framework react|vue|svelte|angular` を必須とし、コンポーネントから `.storymesh/specs` に YAML の下書きを作ります。通常は `stories: []` なので、必要な UI 状態を書いてから `spec check` してください。`--with-stories` は story ファイルがまだないコンポーネントに CSF の `Default` を作り、その Story を required とする YAML を作ります。既存 story ファイルは編集しません。生成した story が Storybook に登録されるかは index を再生成して確認してください。
 
 `spec import` は index の Story を title ごとに YAML にします。既存 Spec は上書きせずスキップします。`--merge` は title が完全一致する既存 Spec に新しい Story だけを追記します。コメントと既存の `required` を保持するため、更新対象は単純な v1 ブロック形式の `stories` リストに限ります。anchor、alias、フロー形式、複数ドキュメントは拒否します。
 
@@ -249,8 +250,8 @@ pnpm storymesh:ignore-file
 ### 共通
 
 - story はコンポーネントと同じディレクトリ、または直下の `stories` / `__stories__` ディレクトリから検索します。
-- story の拡張子は `.js`、`.jsx`、`.mjs`、`.cjs`、`.ts`、`.tsx` に対応します。
-- `.git`、`.next`、`.storybook`、`build`、`coverage`、`dist`、`node_modules`、`target` ディレクトリは走査しません。
+- story の拡張子は `.js`、`.jsx`、`.mjs`、`.cjs`、`.ts`、`.tsx`、`.svelte` に対応します。
+- `.git`、`.next`、`.storybook`、`.svelte-kit`、`build`、`coverage`、`dist`、`node_modules`、`target` ディレクトリは走査しません。
 - `.storymeshignore`、`--ignore`、`--ignore-file` で除外したファイルは、component と story のいずれにも数えません。
 - `*.test.*`、`*.spec.*`、story 自身はコンポーネント数に含めません。
 
@@ -268,6 +269,19 @@ pnpm storymesh:ignore-file
 - `Button.vue` には `Button.stories.ts` のような同名の story を対応付けます。
 - `Button/index.vue` と `Button/Button.stories.ts` の構成にも対応します。
 
+### Svelte
+
+- 小文字のファイル名を含む `.svelte` をコンポーネントとして扱います。
+- `Button.svelte` には `Button.stories.ts`、`Button.stories.js`、ネイティブ形式の `Button.stories.svelte`（および他の対応拡張子）の同名 story を対応付けます。
+- `Button/index.svelte` と `Button/Button.stories.svelte` の構成や、`stories` / `__stories__` サブディレクトリにも対応します。
+- ネイティブ形式には [Storybook の Svelte CSF addon](https://storybook.js.org/addons/@storybook/addon-svelte-csf) を使用します。生成時は標準 CSF の `.stories.ts` とし、`./Button.svelte` から default import します。
+
+```sh
+./target/release/storymesh check src/lib --framework svelte
+./target/release/storymesh check src/lib --framework svelte --generate
+./target/release/storymesh spec init src/lib --framework svelte --with-stories
+```
+
 ### Angular
 
 - `*.component.ts` をコンポーネントとして扱います。
@@ -281,7 +295,7 @@ pnpm storymesh:ignore-file
 
 - コンポーネントと異なる名前の story は対応付けません。
 - MDX ドキュメントは coverage に数えません。
-- React の非コンポーネント `.jsx` / `.tsx` や、Vue の画面・レイアウトもコンポーネントとして数える場合があります。
+- React の非コンポーネント `.jsx` / `.tsx` や、Vue や Svelte の画面・レイアウト（SvelteKit の `+page.svelte` / `+layout.svelte` を含む）もコンポーネントとして数える場合があります。
 - Angular の `Component` を別名 import した suffix-less component は検出しません。
 
 ## 開発

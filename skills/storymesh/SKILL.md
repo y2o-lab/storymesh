@@ -1,19 +1,19 @@
 ---
 name: storymesh
-description: Audit Storybook story coverage with the Storymesh CLI. Use when an agent needs to find components without stories, report Storybook coverage, generate minimal story skeletons on explicit request, or add a Storymesh check to CI for React, Vue, or Angular projects.
+description: Audit Storybook story coverage with the Storymesh CLI. Use when an agent needs to find components without stories, report Storybook coverage, generate minimal story skeletons on explicit request, or add a Storymesh check to CI for React, Vue, Svelte, or Angular projects.
 ---
 
 # Storymesh
 
 Use `storymesh` to compare component files with adjacent Storybook stories. It
-supports React, Vue, and Angular.
+supports React, Vue, Svelte, and Angular.
 
 ## Inspect first
 
 1. Identify the target directory and framework from the request. If either is
    unclear, inspect the project for component extensions and Storybook
    configuration before running the command. Pass the framework explicitly:
-   `react`, `vue`, or `angular`.
+   `react`, `vue`, `svelte`, or `angular`.
 2. Start with a non-mutating command from the project root:
 
    ```sh

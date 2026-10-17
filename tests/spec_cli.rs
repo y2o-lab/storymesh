@@ -317,45 +317,192 @@ fn warning_only_passes_and_missing_inputs_fail_without_pass() {
 }
 
 #[test]
+fn merge_updates_generated_specs_for_all_frameworks() {
+    let cases = [
+        (
+            "react",
+            "Button.tsx",
+            "export default function Button() {}",
+            "Button.stories.tsx",
+        ),
+        (
+            "vue",
+            "Button.vue",
+            "<template><button /></template>",
+            "Button.stories.ts",
+        ),
+        ("svelte", "Button.svelte", "<button />", "Button.stories.ts"),
+        (
+            "angular",
+            "Button.component.ts",
+            "export class ButtonComponent {}",
+            "Button.component.stories.ts",
+        ),
+    ];
+    for (framework, component, source, story_path) in cases {
+        for from_init in [false, true] {
+            let p = TestProject::new();
+            p.add_with_contents(&format!("src/{component}"), source);
+            let write_index = |names: &[&str]| {
+                let entries = names
+                    .iter()
+                    .map(|name| {
+                        let id = format!("components-button--{}", name.to_lowercase());
+                        (
+                            id.clone(),
+                            serde_json::json!({
+                                "id": id, "type": "story", "title": "Components/Button",
+                                "name": name, "importPath": format!("./src/{story_path}")
+                            }),
+                        )
+                    })
+                    .collect::<serde_json::Map<_, _>>();
+                p.add_with_contents(
+                    "index.json",
+                    &serde_json::json!({"v": 5, "entries": entries}).to_string(),
+                );
+            };
+            write_index(&["Default"]);
+            let generated = if from_init {
+                run(
+                    &p,
+                    &[
+                        "spec",
+                        "init",
+                        "src",
+                        "--framework",
+                        framework,
+                        "--spec-dir",
+                        "specs",
+                        "--with-stories",
+                    ],
+                )
+            } else {
+                run(
+                    &p,
+                    &[
+                        "spec",
+                        "import",
+                        "--index",
+                        "index.json",
+                        "--spec-dir",
+                        "specs",
+                    ],
+                )
+            };
+            assert_eq!(
+                generated.status.code(),
+                Some(0),
+                "{framework}, init={from_init}: {}",
+                stderr(&generated)
+            );
+            let spec_name = if from_init {
+                format!("specs/{}.yaml", component.rsplit_once('.').unwrap().0)
+            } else {
+                "specs/components-button.yaml".into()
+            };
+            let path = p.root.join(spec_name);
+            let original = fs::read_to_string(&path).unwrap();
+            let merge_args = [
+                "spec",
+                "import",
+                "--index",
+                "index.json",
+                "--spec-dir",
+                "specs",
+                "--merge",
+            ];
+            let unchanged = run(&p, &merge_args);
+            assert_eq!(unchanged.status.code(), Some(0), "{}", stderr(&unchanged));
+            assert!(stdout(&unchanged).contains("Skipped 1"));
+            assert_eq!(fs::read_to_string(&path).unwrap(), original);
+
+            write_index(&["Default", "Failure", "Loading"]);
+            let merged = run(&p, &merge_args);
+            assert_eq!(
+                merged.status.code(),
+                Some(0),
+                "{framework}, init={from_init}: {}",
+                stderr(&merged)
+            );
+            let updated = fs::read_to_string(&path).unwrap();
+            assert!(updated.starts_with(&original));
+            let yaml: serde_yaml::Value = serde_yaml::from_str(&updated).unwrap();
+            let stories = yaml["stories"].as_sequence().unwrap();
+            assert_eq!(stories.len(), 3);
+            for (story, id) in stories.iter().zip(["default", "failure", "loading"]) {
+                assert_eq!(story["id"].as_str(), Some(id));
+                assert_eq!(story["required"].as_bool(), Some(true));
+            }
+            let checked = run(
+                &p,
+                &[
+                    "spec",
+                    "check",
+                    "--index",
+                    "index.json",
+                    "--spec-dir",
+                    "specs",
+                ],
+            );
+            assert_eq!(checked.status.code(), Some(0), "{}", stderr(&checked));
+            assert!(stdout(&checked).contains("No issues found."));
+
+            let again = run(&p, &merge_args);
+            assert_eq!(again.status.code(), Some(0), "{}", stderr(&again));
+            assert!(stdout(&again).contains("Skipped 1"));
+            assert_eq!(fs::read_to_string(&path).unwrap(), updated);
+        }
+    }
+}
+
+#[test]
 fn merge_preserves_comments_and_optional_values() {
-    let p = TestProject::new();
-    let original = "# hand written\nversion: 1\ncomponent:\n  id: button\n  name: Button\n  title: Components/Button\nstories:\n  - id: default # keep\n    required: false\n";
-    p.add_with_contents("specs/button.yaml", original);
-    p.add_with_contents("index.json", &index("\"a\":{\"id\":\"a\",\"type\":\"story\",\"title\":\"Components/Button\",\"name\":\"Default\"},\"b\":{\"id\":\"b\",\"type\":\"story\",\"title\":\"Components/Button\",\"name\":\"Loading\"}"));
-    let out = run(
-        &p,
-        &[
-            "spec",
-            "import",
-            "--index",
-            "index.json",
-            "--spec-dir",
-            "specs",
-            "--merge",
-        ],
-    );
-    assert_eq!(out.status.code(), Some(0), "{}", stderr(&out));
-    let updated = fs::read_to_string(p.root.join("specs/button.yaml")).unwrap();
-    assert!(updated.starts_with(original));
-    assert!(updated.contains("  - id: loading\n    required: true\n"));
-    let again = run(
-        &p,
-        &[
-            "spec",
-            "import",
-            "--index",
-            "index.json",
-            "--spec-dir",
-            "specs",
-            "--merge",
-        ],
-    );
-    assert_eq!(again.status.code(), Some(0), "{}", stderr(&again));
-    assert!(stdout(&again).contains("Skipped 1"));
-    assert_eq!(
-        fs::read_to_string(p.root.join("specs/button.yaml")).unwrap(),
-        updated
-    );
+    for indent in ["", "  "] {
+        let p = TestProject::new();
+        let original = "# hand written\nversion: 1\ncomponent:\n  id: button\n  name: Button\n  title: Components/Button\nstories:\n  - id: default # keep\n    required: false\n";
+        let original = original
+            .replace("  - id:", &format!("{indent}- id:"))
+            .replace("    required:", &format!("{indent}  required:"));
+        p.add_with_contents("specs/button.yaml", &original);
+        p.add_with_contents("index.json", &index("\"a\":{\"id\":\"a\",\"type\":\"story\",\"title\":\"Components/Button\",\"name\":\"Default\"},\"b\":{\"id\":\"b\",\"type\":\"story\",\"title\":\"Components/Button\",\"name\":\"Loading\"}"));
+        let out = run(
+            &p,
+            &[
+                "spec",
+                "import",
+                "--index",
+                "index.json",
+                "--spec-dir",
+                "specs",
+                "--merge",
+            ],
+        );
+        assert_eq!(out.status.code(), Some(0), "{}", stderr(&out));
+        let updated = fs::read_to_string(p.root.join("specs/button.yaml")).unwrap();
+        assert!(updated.starts_with(&original));
+        assert!(updated.contains(&format!(
+            "{indent}- id: loading\n{indent}  required: true\n"
+        )));
+        let again = run(
+            &p,
+            &[
+                "spec",
+                "import",
+                "--index",
+                "index.json",
+                "--spec-dir",
+                "specs",
+                "--merge",
+            ],
+        );
+        assert_eq!(again.status.code(), Some(0), "{}", stderr(&again));
+        assert!(stdout(&again).contains("Skipped 1"));
+        assert_eq!(
+            fs::read_to_string(p.root.join("specs/button.yaml")).unwrap(),
+            updated
+        );
+    }
 }
 
 #[test]

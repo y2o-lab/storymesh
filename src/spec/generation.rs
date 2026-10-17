@@ -328,6 +328,7 @@ fn append_stories(path: &Path, additions: &[&StoryRequirement]) -> Result<String
     let source =
         fs::read_to_string(path).map_err(|e| SpecCheckError(format!("{}: {e}", path.display())))?;
     let mut in_stories = false;
+    let mut story_indent = None;
     for line in source.lines() {
         let trim = line.trim();
         if trim.starts_with("---")
@@ -346,16 +347,19 @@ fn append_stories(path: &Path, additions: &[&StoryRequirement]) -> Result<String
             in_stories = true;
             continue;
         }
-        if in_stories
-            && !trim.is_empty()
-            && !trim.starts_with('#')
-            && !line.starts_with("  - id:")
-            && !line.starts_with("    required:")
-        {
-            return Err(SpecCheckError(format!(
-                "{}: --merge supports only a simple stories block list at the end of the file",
-                path.display()
-            )));
+        if in_stories && !trim.is_empty() && !trim.starts_with('#') {
+            // serde_yaml emits unindented sequences; retain the existing list style.
+            let indent = *story_indent
+                .get_or_insert_with(|| if line.starts_with("- id:") { "" } else { "  " });
+            let supported = line.strip_prefix(indent).is_some_and(|entry| {
+                entry.starts_with("- id:") || entry.starts_with("  required:")
+            });
+            if !supported {
+                return Err(SpecCheckError(format!(
+                    "{}: --merge supports only a simple stories block list at the end of the file",
+                    path.display()
+                )));
+            }
         }
     }
     if !in_stories {
@@ -368,8 +372,12 @@ fn append_stories(path: &Path, additions: &[&StoryRequirement]) -> Result<String
     if !output.ends_with('\n') {
         output.push('\n');
     }
+    let indent = story_indent.unwrap_or("  ");
     for story in additions {
-        output.push_str(&format!("  - id: {}\n    required: true\n", story.id));
+        output.push_str(&format!(
+            "{indent}- id: {}\n{indent}  required: true\n",
+            story.id
+        ));
     }
     Ok(output)
 }

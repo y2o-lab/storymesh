@@ -10,7 +10,7 @@ pub(super) fn story_keys(path: &Path) -> Option<Vec<PathBuf>> {
     let extension = path.extension()?.to_str()?.to_ascii_lowercase();
     if !matches!(
         extension.as_str(),
-        "js" | "jsx" | "mjs" | "cjs" | "ts" | "tsx"
+        "js" | "jsx" | "mjs" | "cjs" | "ts" | "tsx" | "svelte"
     ) {
         return None;
     }

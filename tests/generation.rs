@@ -31,6 +31,13 @@ fn generates_framework_specific_story_skeletons_without_overwriting() {
             "import Component from './Card.vue';",
         ),
         (
+            Framework::Svelte,
+            "src/Badge.svelte",
+            "<span>Badge</span>\n",
+            "src/Badge.stories.ts",
+            "import Component from './Badge.svelte';",
+        ),
+        (
             Framework::Angular,
             "src/user-card.component.ts",
             "export class UserCardComponent {}\n",

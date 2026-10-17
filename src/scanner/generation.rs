@@ -108,19 +108,21 @@ pub(crate) fn story_skeleton(
 
     let story_extension = match framework {
         Framework::React => extension,
-        Framework::Vue | Framework::Angular => "ts",
+        Framework::Vue | Framework::Svelte | Framework::Angular => "ts",
     };
     let mut story_path = component.to_path_buf();
     story_path.set_file_name(format!("{stem}.stories.{story_extension}"));
 
     let import_stem = match framework {
-        Framework::Vue => file_name.to_owned(),
+        Framework::Vue | Framework::Svelte => file_name.to_owned(),
         Framework::React | Framework::Angular => stem.to_owned(),
     };
     let import_path = escape_javascript_string(&format!("./{import_stem}"));
     let import = match framework {
         Framework::React => react_import(root, component, &import_path)?,
-        Framework::Vue => Some(format!("import Component from '{import_path}';")),
+        Framework::Vue | Framework::Svelte => {
+            Some(format!("import Component from '{import_path}';"))
+        }
         Framework::Angular => {
             let export_name = angular_export_name(stem);
             Some(format!(

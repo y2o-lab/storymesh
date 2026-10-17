@@ -5,6 +5,8 @@ pub enum Framework {
     React,
     /// Vue single-file components and Component Story Format files.
     Vue,
+    /// Svelte single-file components and JavaScript, TypeScript, or native Svelte stories.
+    Svelte,
     /// Angular components and Component Story Format files.
     Angular,
 }
@@ -15,6 +17,7 @@ impl Framework {
         match self {
             Self::React => "React",
             Self::Vue => "Vue",
+            Self::Svelte => "Svelte",
             Self::Angular => "Angular",
         }
     }

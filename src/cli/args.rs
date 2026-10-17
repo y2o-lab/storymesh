@@ -56,6 +56,7 @@ pub(super) struct ScanArgs {
 pub(super) enum CliFramework {
     React,
     Vue,
+    Svelte,
     Angular,
 }
 
@@ -64,6 +65,7 @@ impl From<CliFramework> for Framework {
         match framework {
             CliFramework::React => Self::React,
             CliFramework::Vue => Self::Vue,
+            CliFramework::Svelte => Self::Svelte,
             CliFramework::Angular => Self::Angular,
         }
     }

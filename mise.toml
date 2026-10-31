@@ -1,5 +1,5 @@
 [tools]
-node = "24"
+node = "26"
 ripgrep = "15.2.0"
 rust = "stable"
 

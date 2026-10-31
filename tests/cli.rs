@@ -606,7 +606,7 @@ fn analog_generation_excludes_pages_and_preserves_existing_story() {
 }
 
 #[test]
-fn analog_default_export_page_gets_a_named_import_skeleton() {
+fn analog_default_export_page_uses_a_default_import() {
     let p = TestProject::new();
     p.add_with_contents(
         "src/app/pages/index.page.ts",
@@ -623,7 +623,7 @@ fn analog_default_export_page_gets_a_named_import_skeleton() {
     assert!(
         std::fs::read_to_string(p.root.join("src/app/pages/index.page.stories.ts"))
             .unwrap()
-            .contains("{ IndexPage as Component }")
+            .contains("import Component from './index.page';")
     );
 }
 

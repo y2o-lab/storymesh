@@ -1,10 +1,10 @@
 # Framework support roadmap
 
-Status: proposal; no new framework support is implied by this document. Research snapshot: 2026-10-31. Priorities are based on implementation dependencies and verifiability, not measured adoption. Deliver each phase as a separate, reversible change; reconsider the order when user demand or upstream compatibility changes.
+Status: roadmap. Phases 1–3 and 5–7 have shipped modes (Ember is experimental); phases 4 and 8 remain proposals. See the [README](../README.md) for supported modes. Research snapshot: 2026-10-31. Priorities are based on implementation dependencies and verifiability, not measured adoption. Deliver each phase as a separate, reversible change; reconsider the order when user demand or upstream compatibility changes.
 
 ## Current baseline
 
-`check`, `coverage`, `report`, and `spec init` select one of React, Vue, Svelte, or Angular. Matching is primarily filename and path based, not an AST or Storybook registration check. `check --generate` and `spec init --with-stories` share the story skeleton generator; `spec import` and `spec check` consume a Storybook index and do not select a framework. See [README](../README.md#detection-rules) and [CLI options](../src/cli/args.rs).
+`check`, `coverage`, `report`, and `spec init` select one of React, Preact, SolidJS, Qwik, Web Components, HTML, Ember, Vue, Svelte, or Angular. Matching is primarily filename- and path-based, not an AST or Storybook registration check. `check --generate` and `spec init --with-stories` share the story skeleton generator; `spec import` and `spec check` consume a Storybook index and do not select a framework. See [README](../README.md#detection-rules) and [CLI options](../src/cli/args.rs).
 
 React currently treats most `.jsx` / `.tsx` files and PascalCase `.js` / `.ts` files as components; it may produce false positives, and its generator falls back to a `render: () => null` placeholder when it cannot identify an export. SvelteKit pages and layouts can also be counted. New modes must document comparable limitations rather than claim semantic detection.
 

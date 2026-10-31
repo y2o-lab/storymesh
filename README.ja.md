@@ -127,7 +127,7 @@ Card.stories.tsx
 
 `--generate` 指定時は missing の有無ではなく生成処理の成否を終了コードで示します。すべて生成できた場合（生成対象がない場合を含む）は `0`、生成に失敗した場合は `2` です。生成した story を含めて再度 `check` すると coverage 済みとして扱われます。既存ファイルは上書きしません。
 
-React はコンポーネントと同じ拡張子（例: `Button.tsx` → `Button.stories.tsx`）、Vue、Svelte、Angular は `.stories.ts` を生成します。React は default export と、ファイル名に対応する一般的な named export を判別します。import 可能な export が見つからない場合は、Storybook 上で編集を始められる `render: () => null` のプレースホルダーを生成します。Vue と Svelte は拡張子付きパスからの default import、Angular は一般的なクラス名（例: `user-card.component.ts` → `UserCardComponent`）を前提とするため、プロジェクトの export が異なる場合は生成後に import を調整してください。
+React はコンポーネントと同じ拡張子（例: `Button.tsx` → `Button.stories.tsx`）、Vue、Svelte、Angular は `.stories.ts` を生成します。React は default export と、ファイル名に対応する一般的な named export を判別します。import 可能な export が見つからない場合は、Storybook 上で編集を始められる `render: () => null` のプレースホルダーを生成します。Vue と Svelte は拡張子付きパスからの default import、Angular は default export、または一般的な named export のクラス名（例: `user-card.component.ts` → `UserCardComponent`）を前提とするため、プロジェクトの export が異なる場合は生成後に import を調整してください。
 
 ### `spec check` / `spec init` / `spec import`
 

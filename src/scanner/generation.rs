@@ -202,10 +202,18 @@ pub(crate) fn story_skeleton(
             Some(format!("import Component from '{import_path}';"))
         }
         Framework::Angular => {
-            let export_name = angular_export_name(stem);
-            Some(format!(
-                "import {{ {export_name} as Component }} from '{import_path}';"
-            ))
+            let absolute_path = root.join(component);
+            let source = fs::read(&absolute_path).map_err(|error| {
+                GenerateError::io("read Angular component", &absolute_path, error)
+            })?;
+            if contains_default_export(&source) {
+                Some(format!("import Component from '{import_path}';"))
+            } else {
+                let export_name = angular_export_name(stem);
+                Some(format!(
+                    "import {{ {export_name} as Component }} from '{import_path}';"
+                ))
+            }
         }
         Framework::WebComponents => {
             return Err(GenerateError::invalid_component(

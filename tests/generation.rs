@@ -82,9 +82,16 @@ fn generates_framework_specific_story_skeletons_without_overwriting() {
         (
             Framework::Angular,
             "src/user-card.component.ts",
-            "export class UserCardComponent {}\n",
+            "// export default class Example {}\nconst example = 'export default';\nexport class UserCardComponent {}\n",
             "src/user-card.component.stories.ts",
             "import { UserCardComponent as Component } from './user-card.component';",
+        ),
+        (
+            Framework::Angular,
+            "src/index.page.ts",
+            "@Component({}) export default class HomePage {}\n",
+            "src/index.page.stories.ts",
+            "import Component from './index.page';",
         ),
     ];
 

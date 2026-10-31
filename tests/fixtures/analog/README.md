@@ -19,7 +19,7 @@ Storybook / Vite integration and a representative `.page.ts` source layout,
 not a running Analog application, file routing, SSR, providers, loaders or
 other versions. Remove generated stories before repeating.
 
-The default-exported `index.page.ts` is detected, but generation imports a
-named `IndexPage` which it does not export. Including that generated story made
-the Storybook build fail; edit the import to the actual default export or write
-the story manually. The aliased `@NgComponent` in `alias.ts` is not detected.
+The default-exported `index.page.ts` is detected and generation now uses a
+default import. CLI and generation regression tests cover this import; the
+Storybook build and browser rendering above were verified only for the component
+directory. The aliased `@NgComponent` in `alias.ts` is not detected.

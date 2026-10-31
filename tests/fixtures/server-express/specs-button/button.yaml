@@ -1,0 +1,7 @@
+version: 1
+component:
+  id: button
+  name: Button
+  title: Components/Button
+stories:
+  - id: default

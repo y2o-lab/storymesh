@@ -1,10 +1,12 @@
 mod detector;
+mod ember;
 mod filesystem;
 mod generation;
 mod matching;
+mod web_components;
 
 use std::{
-    collections::BTreeMap,
+    collections::{BTreeMap, BTreeSet},
     path::{Path, PathBuf},
 };
 
@@ -39,6 +41,7 @@ pub fn scan_with_options(
 
     let mut files = Vec::new();
     filesystem::collect_files(root, root, &ignore_matcher, &mut files)?;
+    let file_set: BTreeSet<_> = files.iter().cloned().collect();
 
     let mut stories = BTreeMap::new();
     for relative_path in &files {
@@ -50,12 +53,15 @@ pub fn scan_with_options(
     }
 
     let mut components = Vec::new();
-    for component in files {
-        if detector::is_component(root, &component, framework)? {
-            let story = matching::component_keys(&component, framework)
+    for component in &files {
+        if detector::is_component(root, component, framework, &file_set)? {
+            let story = matching::component_keys(component, framework)
                 .into_iter()
                 .find_map(|key| stories.get(&key).cloned());
-            components.push(ComponentCoverage { component, story });
+            components.push(ComponentCoverage {
+                component: component.clone(),
+                story,
+            });
         }
     }
     components.sort_by(|left, right| left.component.cmp(&right.component));

@@ -37,6 +37,475 @@ fn init_requires_framework_before_creating_files() {
 }
 
 #[test]
+fn preact_init_generates_story_and_detects_title_collisions() {
+    let p = TestProject::new();
+    p.add_with_contents("src/Button.jsx", "export function Button() {}\n");
+    let args = [
+        "spec",
+        "init",
+        "src",
+        "--framework",
+        "preact",
+        "--spec-dir",
+        "specs",
+        "--with-stories",
+    ];
+    let out = run(&p, &args);
+    assert_eq!(out.status.code(), Some(0), "{}", stderr(&out));
+    assert!(
+        fs::read_to_string(p.root.join("src/Button.stories.jsx"))
+            .unwrap()
+            .contains("import { Button as Component }")
+    );
+    assert!(
+        fs::read_to_string(p.root.join("specs/Button.yaml"))
+            .unwrap()
+            .contains("id: default")
+    );
+
+    let other = TestProject::new();
+    other.add_with_contents("src/a/Button.jsx", "export function Button() {}\n");
+    other.add_with_contents("src/b/Button.jsx", "export function Button() {}\n");
+    let collision = run(&other, &args);
+    assert_eq!(collision.status.code(), Some(2));
+    assert!(stderr(&collision).contains("ambiguous"));
+    assert!(!other.root.join("src/a/Button.stories.jsx").exists());
+}
+
+#[test]
+fn solid_init_generates_a_story_and_rejects_title_collision() {
+    let args = [
+        "spec",
+        "init",
+        "src",
+        "--framework",
+        "solid",
+        "--spec-dir",
+        "specs",
+        "--with-stories",
+    ];
+    let p = TestProject::new();
+    p.add_with_contents("src/Button.tsx", "export function Button() {}\n");
+    let out = run(&p, &args);
+    assert_eq!(out.status.code(), Some(0), "{}", stderr(&out));
+    assert!(
+        fs::read_to_string(p.root.join("src/Button.stories.tsx"))
+            .unwrap()
+            .contains("import { Button as Component }")
+    );
+    assert!(
+        fs::read_to_string(p.root.join("specs/Button.yaml"))
+            .unwrap()
+            .contains("id: default")
+    );
+    let other = TestProject::new();
+    other.add_with_contents("src/a/Button.tsx", "export function Button() {}\n");
+    other.add_with_contents("src/b/Button.tsx", "export function Button() {}\n");
+    let out = run(&other, &args);
+    assert_eq!(out.status.code(), Some(2));
+    assert!(stderr(&out).contains("ambiguous"));
+    assert!(!other.root.join("src/a/Button.stories.tsx").exists());
+}
+
+#[test]
+fn qwik_init_generates_story_and_rejects_title_collision() {
+    let args = [
+        "spec",
+        "init",
+        "src",
+        "--framework",
+        "qwik",
+        "--spec-dir",
+        "specs",
+        "--with-stories",
+    ];
+    let p = TestProject::new();
+    p.add_with_contents(
+        "src/Button.tsx",
+        "export const Button = component$(() => null);\n",
+    );
+    let out = run(&p, &args);
+    assert_eq!(out.status.code(), Some(0), "{}", stderr(&out));
+    assert!(
+        fs::read_to_string(p.root.join("src/Button.stories.tsx"))
+            .unwrap()
+            .contains("import { Button as Component }")
+    );
+    assert!(
+        fs::read_to_string(p.root.join("specs/Button.yaml"))
+            .unwrap()
+            .contains("id: default")
+    );
+    let other = TestProject::new();
+    other.add_with_contents(
+        "src/a/Button.tsx",
+        "export const Button = component$(() => null);\n",
+    );
+    other.add_with_contents(
+        "src/b/Button.tsx",
+        "export const Button = component$(() => null);\n",
+    );
+    let out = run(&other, &args);
+    assert_eq!(out.status.code(), Some(2));
+    assert!(stderr(&out).contains("ambiguous"));
+    assert!(!other.root.join("src/a/Button.stories.tsx").exists());
+}
+
+#[test]
+fn react_native_web_spec_init_creates_platform_story() {
+    let p = TestProject::new();
+    p.add_with_contents(
+        "src/Button.web.tsx",
+        "export default function Button() {}\n",
+    );
+    let out = run(
+        &p,
+        &[
+            "spec",
+            "init",
+            "src",
+            "--framework",
+            "react",
+            "--spec-dir",
+            "specs",
+            "--with-stories",
+        ],
+    );
+    assert_eq!(out.status.code(), Some(0), "{}", stderr(&out));
+    assert!(
+        fs::read_to_string(p.root.join("src/Button.web.stories.tsx"))
+            .unwrap()
+            .contains("from './Button.web'")
+    );
+    assert!(
+        fs::read_to_string(p.root.join("specs/Button.web.yaml"))
+            .unwrap()
+            .contains("Components/Button.web")
+    );
+}
+
+#[test]
+fn react_native_duplicate_platform_titles_fail_before_writing() {
+    let p = TestProject::new();
+    p.add_with_contents(
+        "src/a/Button.ios.tsx",
+        "export default function Button() {}\n",
+    );
+    p.add_with_contents(
+        "src/b/Button.ios.tsx",
+        "export default function Button() {}\n",
+    );
+    let out = run(
+        &p,
+        &[
+            "spec",
+            "init",
+            "src",
+            "--framework",
+            "react",
+            "--spec-dir",
+            "specs",
+            "--with-stories",
+        ],
+    );
+    assert_eq!(out.status.code(), Some(2));
+    assert!(stderr(&out).contains("ambiguous"));
+    assert!(!p.root.join("src/a/Button.ios.stories.tsx").exists());
+    assert!(!p.root.join("src/b/Button.ios.stories.tsx").exists());
+}
+
+#[test]
+fn next_app_router_duplicate_page_titles_are_rejected_without_writes() {
+    let p = TestProject::new();
+    p.add_with_contents("app/page.tsx", "export default function Page() {}\n");
+    p.add_with_contents(
+        "app/dashboard/page.tsx",
+        "export default function Dashboard() {}\n",
+    );
+    let out = run(
+        &p,
+        &[
+            "spec",
+            "init",
+            "app",
+            "--framework",
+            "react",
+            "--spec-dir",
+            "specs",
+            "--with-stories",
+        ],
+    );
+    assert_eq!(out.status.code(), Some(2));
+    assert!(stderr(&out).contains("ambiguous"));
+    assert!(!p.root.join("app/page.stories.tsx").exists());
+    assert!(!p.root.join("app/dashboard/page.stories.tsx").exists());
+    assert!(!p.root.join("specs/page.yaml").exists());
+}
+
+#[test]
+fn tanstack_duplicate_route_titles_are_rejected_without_writes() {
+    let p = TestProject::new();
+    p.add_with_contents("src/routes/about.tsx", "export const Route = {};\n");
+    p.add_with_contents("src/routes/admin/about.tsx", "export const Route = {};\n");
+    let out = run(
+        &p,
+        &[
+            "spec",
+            "init",
+            "src",
+            "--framework",
+            "react",
+            "--spec-dir",
+            "specs",
+            "--with-stories",
+        ],
+    );
+    assert_eq!(out.status.code(), Some(2));
+    assert!(stderr(&out).contains("ambiguous"));
+    assert!(!p.root.join("src/routes/about.stories.tsx").exists());
+    assert!(!p.root.join("src/routes/admin/about.stories.tsx").exists());
+}
+
+#[test]
+fn nuxt_duplicate_page_titles_are_rejected_without_writes() {
+    let p = TestProject::new();
+    p.add("pages/a/about.vue");
+    p.add("pages/b/about.vue");
+    let out = run(
+        &p,
+        &[
+            "spec",
+            "init",
+            "pages",
+            "--framework",
+            "vue",
+            "--spec-dir",
+            "specs",
+            "--with-stories",
+        ],
+    );
+    assert_eq!(out.status.code(), Some(2));
+    assert!(stderr(&out).contains("ambiguous"));
+    assert!(!p.root.join("pages/a/about.stories.ts").exists());
+    assert!(!p.root.join("pages/b/about.stories.ts").exists());
+}
+
+#[test]
+fn sveltekit_page_spec_ids_are_rejected_without_writes() {
+    let p = TestProject::new();
+    p.add("src/routes/+page.svelte");
+    p.add("src/routes/admin/+page.svelte");
+    let out = run(
+        &p,
+        &[
+            "spec",
+            "init",
+            "src/routes",
+            "--framework",
+            "svelte",
+            "--spec-dir",
+            "specs",
+            "--with-stories",
+        ],
+    );
+    assert_eq!(out.status.code(), Some(2));
+    assert!(stderr(&out).contains("cannot be represented as a v1 id"));
+    assert!(!p.root.join("src/routes/+page.stories.ts").exists());
+    assert!(!p.root.join("src/routes/admin/+page.stories.ts").exists());
+}
+
+#[test]
+fn sveltekit_duplicate_component_titles_are_rejected_without_writes() {
+    let p = TestProject::new();
+    p.add("src/lib/a/Card.svelte");
+    p.add("src/lib/b/Card.svelte");
+    let out = run(
+        &p,
+        &[
+            "spec",
+            "init",
+            "src/lib",
+            "--framework",
+            "svelte",
+            "--spec-dir",
+            "specs",
+            "--with-stories",
+        ],
+    );
+    assert_eq!(out.status.code(), Some(2));
+    assert!(stderr(&out).contains("ambiguous"));
+    assert!(!p.root.join("src/lib/a/Card.stories.ts").exists());
+    assert!(!p.root.join("src/lib/b/Card.stories.ts").exists());
+}
+
+#[test]
+fn analog_duplicate_component_titles_are_rejected_without_writes() {
+    let p = TestProject::new();
+    p.add("src/app/a/card.component.ts");
+    p.add("src/app/b/card.component.ts");
+    let out = run(
+        &p,
+        &[
+            "spec",
+            "init",
+            "src/app",
+            "--framework",
+            "angular",
+            "--spec-dir",
+            "specs",
+            "--with-stories",
+        ],
+    );
+    assert_eq!(out.status.code(), Some(2));
+    assert!(stderr(&out).contains("ambiguous"));
+    assert!(!p.root.join("src/app/a/card.component.stories.ts").exists());
+    assert!(!p.root.join("src/app/b/card.component.stories.ts").exists());
+}
+
+#[test]
+fn web_components_spec_init_generates_and_rejects_title_collision() {
+    let p = TestProject::new();
+    p.add_with_contents("src/card.ts", "@customElement('my-card') class Card {}\n");
+    let args = [
+        "spec",
+        "init",
+        "src",
+        "--framework",
+        "web-components",
+        "--spec-dir",
+        "specs",
+        "--with-stories",
+    ];
+    let out = run(&p, &args);
+    assert_eq!(out.status.code(), Some(0), "{}", stderr(&out));
+    assert!(
+        fs::read_to_string(p.root.join("src/card.stories.ts"))
+            .unwrap()
+            .contains("document.createElement('my-card')")
+    );
+    assert!(
+        fs::read_to_string(p.root.join("specs/card.yaml"))
+            .unwrap()
+            .contains("id: default")
+    );
+    let other = TestProject::new();
+    other.add_with_contents("src/a/card.js", "customElements.define('a-card', Card);\n");
+    other.add_with_contents("src/b/card.js", "customElements.define('b-card', Card);\n");
+    let out = run(&other, &args);
+    assert_eq!(out.status.code(), Some(2));
+    assert!(stderr(&out).contains("ambiguous"));
+    assert!(!other.root.join("src/a/card.stories.js").exists());
+}
+
+#[test]
+fn html_spec_init_generates_story_and_rejects_colliding_titles() {
+    let args = [
+        "spec",
+        "init",
+        "src",
+        "--framework",
+        "html",
+        "--spec-dir",
+        "specs",
+        "--with-stories",
+    ];
+    let p = TestProject::new();
+    p.add_with_contents("src/card.component.html", "<p>Card</p>");
+    let out = run(&p, &args);
+    assert_eq!(out.status.code(), Some(0), "{}", stderr(&out));
+    assert!(
+        fs::read_to_string(p.root.join("src/card.component.stories.js"))
+            .unwrap()
+            .contains("./card.component.html?raw")
+    );
+    let specs = fs::read_dir(p.root.join("specs"))
+        .unwrap()
+        .next()
+        .unwrap()
+        .unwrap()
+        .path();
+    assert!(fs::read_to_string(specs).unwrap().contains("id: default"));
+    let other = TestProject::new();
+    other.add("src/a/card.component.html");
+    other.add("src/b/card.component.html");
+    let out = run(&other, &args);
+    assert_eq!(out.status.code(), Some(2));
+    assert!(stderr(&out).contains("ambiguous"));
+    assert!(!other.root.join("src/a/card.component.stories.js").exists());
+}
+
+#[test]
+fn server_index_checks_declared_states_but_does_not_discover_components() {
+    let p = TestProject::new();
+    let fixture =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/server-express");
+    let index = fixture.join("index.sample.json");
+    let only_button = fixture.join("specs-button");
+    let both = fixture.join("specs-both");
+    let pass = run(
+        &p,
+        &[
+            "spec",
+            "check",
+            "--spec-dir",
+            only_button.to_str().unwrap(),
+            "--index",
+            index.to_str().unwrap(),
+        ],
+    );
+    assert_eq!(pass.status.code(), Some(0), "{}", stderr(&pass));
+    assert!(stdout(&pass).contains("Components checked: 1"));
+    let missing = run(
+        &p,
+        &[
+            "spec",
+            "check",
+            "--spec-dir",
+            both.to_str().unwrap(),
+            "--index",
+            index.to_str().unwrap(),
+        ],
+    );
+    assert_eq!(missing.status.code(), Some(1));
+    assert!(stdout(&missing).contains("Card/default"));
+}
+
+#[test]
+fn ember_spec_init_generates_and_rejects_title_collisions() {
+    let args = [
+        "spec",
+        "init",
+        "app/components",
+        "--framework",
+        "ember",
+        "--spec-dir",
+        "specs",
+        "--with-stories",
+    ];
+    let p = TestProject::new();
+    p.add("app/components/card.gjs");
+    let out = run(&p, &args);
+    assert_eq!(out.status.code(), Some(0), "{}", stderr(&out));
+    assert!(
+        fs::read_to_string(p.root.join("app/components/card.stories.js"))
+            .unwrap()
+            .contains("<Card />")
+    );
+    assert!(
+        fs::read_to_string(p.root.join("specs/card.yaml"))
+            .unwrap()
+            .contains("id: default")
+    );
+    let other = TestProject::new();
+    other.add("app/components/a/card.gjs");
+    other.add("app/components/b/card.gjs");
+    let out = run(&other, &args);
+    assert_eq!(out.status.code(), Some(2));
+    assert!(stderr(&out).contains("ambiguous"));
+    assert!(!other.root.join("app/components/a/card.stories.js").exists());
+}
+
+#[test]
 fn svelte_init_generates_matching_specs_and_preserves_native_stories() {
     let p = TestProject::new();
     p.add_with_contents("Button.svelte", "<button>Button</button>\n");

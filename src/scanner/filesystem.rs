@@ -16,6 +16,12 @@ pub struct ScanError {
 }
 
 impl ScanError {
+    pub(super) fn invalid_component(path: &Path, detail: &str) -> Self {
+        Self {
+            context: format!("cannot scan {}: {detail}", path.display()),
+            source: None,
+        }
+    }
     pub(super) fn invalid_root(root: &Path, detail: &str) -> Self {
         Self {
             context: format!("cannot scan {}: {detail}", root.display()),

@@ -79,3 +79,27 @@ fn svelte_stories_match_only_the_corresponding_component_and_respect_ignores() {
     assert_eq!(report.components.len(), 2);
     assert_eq!(report.covered_count(), 0);
 }
+
+#[test]
+fn sveltekit_routes_are_counted_as_svelte_components() {
+    let p = TestProject::new();
+    p.add("src/lib/Button.svelte");
+    p.add("src/lib/Button.stories.ts");
+    p.add("src/lib/Card.svelte");
+    p.add("src/routes/+page.svelte");
+    p.add("src/routes/+layout.svelte");
+    p.add("src/routes/+page.test.svelte");
+    p.add("src/routes/+page.ts");
+    p.add(".svelte-kit/generated/Root.svelte");
+    let report = scan(&p.root, Framework::Svelte).expect("scan");
+    assert_eq!(report.components.len(), 4);
+    assert_eq!(report.covered_count(), 1);
+    assert_eq!(
+        report.missing().collect::<Vec<_>>(),
+        [
+            Path::new("src/lib/Card.svelte"),
+            Path::new("src/routes/+layout.svelte"),
+            Path::new("src/routes/+page.svelte"),
+        ]
+    );
+}

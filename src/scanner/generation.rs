@@ -107,19 +107,97 @@ pub(crate) fn story_skeleton(
         .ok_or_else(|| GenerateError::invalid_component(component, "extension is not UTF-8"))?;
 
     let story_extension = match framework {
-        Framework::React => extension,
+        Framework::React | Framework::Preact | Framework::Solid | Framework::Qwik => extension,
+        Framework::WebComponents => extension,
+        Framework::Html | Framework::Ember => "js",
         Framework::Vue | Framework::Svelte | Framework::Angular => "ts",
     };
     let mut story_path = component.to_path_buf();
     story_path.set_file_name(format!("{stem}.stories.{story_extension}"));
 
+    if matches!(framework, Framework::Html | Framework::WebComponents)
+        && file_name.contains(['?', '#'])
+    {
+        return Err(GenerateError::invalid_component(
+            component,
+            "file name contains a module query or fragment delimiter; write the story manually",
+        ));
+    }
+
+    if framework == Framework::Ember {
+        let name = super::ember::invocation(root, component)
+            .map_err(|error| GenerateError::invalid_component(component, &error.to_string()))?
+            .ok_or_else(|| {
+                GenerateError::invalid_component(
+                    component,
+                    "cannot infer a conventional Ember component name; write the story manually",
+                )
+            })?;
+        let title = escape_javascript_string(&component_title(component, stem));
+        return Ok((
+            story_path,
+            format!(
+                "import {{ hbs }} from 'ember-cli-htmlbars';\n\nconst meta = {{ title: '{title}' }};\n\nexport default meta;\n\nexport const Default = {{\n  render: () => ({{ template: hbs`<{name} />` }}),\n}};\n"
+            ),
+        ));
+    }
+
+    if framework == Framework::Html {
+        let import_path = escape_javascript_string(&format!("./{file_name}?raw"));
+        let title = escape_javascript_string(&component_title(component, stem));
+        return Ok((
+            story_path,
+            format!(
+                "import markup from '{import_path}';\n\nconst meta = {{\n  title: '{title}',\n}};\n\nexport default meta;\n\nexport const Default = {{\n  render: () => markup,\n}};\n"
+            ),
+        ));
+    }
+
+    if framework == Framework::WebComponents {
+        let absolute_path = root.join(component);
+        let source = fs::read(&absolute_path).map_err(|error| {
+            GenerateError::io("read Web Components source", &absolute_path, error)
+        })?;
+        let tags = super::web_components::registrations(&source);
+        let [Some(tag)] = tags.as_slice() else {
+            return Err(GenerateError::invalid_component(
+                component,
+                "expected one registration with a static custom-element tag; write the story manually",
+            ));
+        };
+        let import_path = escape_javascript_string(&format!("./{file_name}"));
+        let title = escape_javascript_string(&component_title(component, stem));
+        return Ok((
+            story_path,
+            format!(
+                "import '{import_path}';\n\nconst meta = {{\n  title: '{title}',\n  component: '{tag}',\n}};\n\nexport default meta;\n\nexport const Default = {{\n  render: () => document.createElement('{tag}'),\n}};\n"
+            ),
+        ));
+    }
+
     let import_stem = match framework {
         Framework::Vue | Framework::Svelte => file_name.to_owned(),
-        Framework::React | Framework::Angular => stem.to_owned(),
+        Framework::React
+        | Framework::Preact
+        | Framework::Solid
+        | Framework::Qwik
+        | Framework::WebComponents
+        | Framework::Html
+        | Framework::Ember
+        | Framework::Angular => stem.to_owned(),
     };
     let import_path = escape_javascript_string(&format!("./{import_stem}"));
     let import = match framework {
-        Framework::React => react_import(root, component, &import_path)?,
+        Framework::React | Framework::Preact | Framework::Solid | Framework::Qwik => {
+            let import = jsx_import(root, component, &import_path, framework != Framework::React)?;
+            if framework != Framework::React && import.is_none() {
+                return Err(GenerateError::invalid_component(
+                    component,
+                    "could not identify a default export or a named export matching the component name; write the story manually",
+                ));
+            }
+            import
+        }
         Framework::Vue | Framework::Svelte => {
             Some(format!("import Component from '{import_path}';"))
         }
@@ -128,6 +206,24 @@ pub(crate) fn story_skeleton(
             Some(format!(
                 "import {{ {export_name} as Component }} from '{import_path}';"
             ))
+        }
+        Framework::WebComponents => {
+            return Err(GenerateError::invalid_component(
+                component,
+                "cannot generate this Web Components story",
+            ));
+        }
+        Framework::Html => {
+            return Err(GenerateError::invalid_component(
+                component,
+                "cannot generate this HTML story",
+            ));
+        }
+        Framework::Ember => {
+            return Err(GenerateError::invalid_component(
+                component,
+                "cannot generate this Ember story",
+            ));
         }
     };
     let title = escape_javascript_string(&component_title(component, stem));
@@ -143,26 +239,51 @@ pub(crate) fn story_skeleton(
     Ok((story_path, contents))
 }
 
-fn react_import(
+fn jsx_import(
     root: &Path,
     component: &Path,
     import_path: &str,
+    strict: bool,
 ) -> Result<Option<String>, GenerateError> {
     let absolute_path = root.join(component);
     let source = fs::read(&absolute_path)
-        .map_err(|error| GenerateError::io("read React component", &absolute_path, error))?;
+        .map_err(|error| GenerateError::io("read JSX component", &absolute_path, error))?;
     if contains_default_export(&source) {
         return Ok(Some(format!("import Component from '{import_path}';")));
     }
 
     let component_name = component_name(component);
     let export_name = pascal_case_identifier(component_name);
-    if export_name.is_empty() || !contains_named_export(&source, &export_name) {
+    if export_name.is_empty()
+        || !(if strict {
+            contains_named_declaration(&source, &export_name)
+        } else {
+            contains_named_export(&source, &export_name)
+        })
+    {
         return Ok(None);
     }
     Ok(Some(format!(
         "import {{ {export_name} as Component }} from '{import_path}';"
     )))
+}
+
+fn contains_named_declaration(source: &[u8], export_name: &str) -> bool {
+    let identifiers = javascript_identifiers(source);
+    let name = export_name.as_bytes();
+    identifiers.windows(3).any(|tokens| {
+        tokens[0] == b"export"
+            && matches!(
+                tokens[1],
+                b"function" | b"class" | b"const" | b"let" | b"var"
+            )
+            && tokens[2] == name
+    }) || identifiers.windows(4).any(|tokens| {
+        tokens[0] == b"export"
+            && tokens[1] == b"async"
+            && tokens[2] == b"function"
+            && tokens[3] == name
+    })
 }
 
 fn contains_default_export(source: &[u8]) -> bool {
@@ -307,5 +428,19 @@ fn pascal_case_identifier(name: &str) -> String {
 }
 
 fn escape_javascript_string(value: &str) -> String {
-    value.replace('\\', "\\\\").replace('\'', "\\'")
+    let mut escaped = String::new();
+    for character in value.chars() {
+        match character {
+            '\\' => escaped.push_str("\\\\"),
+            '\'' => escaped.push_str("\\'"),
+            '\n' => escaped.push_str("\\n"),
+            '\r' => escaped.push_str("\\r"),
+            '\t' => escaped.push_str("\\t"),
+            character if character.is_control() || matches!(character, '\u{2028}' | '\u{2029}') => {
+                escaped.push_str(&format!("\\u{:04x}", u32::from(character)));
+            }
+            character => escaped.push(character),
+        }
+    }
+    escaped
 }

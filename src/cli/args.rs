@@ -55,6 +55,12 @@ pub(super) struct ScanArgs {
 #[derive(Clone, Copy, Debug, ValueEnum)]
 pub(super) enum CliFramework {
     React,
+    Preact,
+    Solid,
+    Qwik,
+    WebComponents,
+    Html,
+    Ember,
     Vue,
     Svelte,
     Angular,
@@ -64,6 +70,12 @@ impl From<CliFramework> for Framework {
     fn from(framework: CliFramework) -> Self {
         match framework {
             CliFramework::React => Self::React,
+            CliFramework::Preact => Self::Preact,
+            CliFramework::Solid => Self::Solid,
+            CliFramework::Qwik => Self::Qwik,
+            CliFramework::WebComponents => Self::WebComponents,
+            CliFramework::Html => Self::Html,
+            CliFramework::Ember => Self::Ember,
             CliFramework::Vue => Self::Vue,
             CliFramework::Svelte => Self::Svelte,
             CliFramework::Angular => Self::Angular,

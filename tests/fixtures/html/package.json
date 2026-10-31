@@ -1,0 +1,1 @@
+{"private":true,"type":"module","scripts":{"build-storybook":"storybook build"},"devDependencies":{"@storybook/html-vite":"10.6.5","storybook":"10.6.5","vite":"7.1.12"}}

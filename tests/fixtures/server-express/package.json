@@ -1,0 +1,1 @@
+{"private":true,"type":"module","scripts":{"build-storybook":"storybook build","start":"node server.js"},"dependencies":{"express":"5.1.0"},"devDependencies":{"@storybook/server-webpack5":"10.6.5","storybook":"10.6.5"}}

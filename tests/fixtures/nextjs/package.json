@@ -1,0 +1,1 @@
+{"private":true,"type":"module","scripts":{"build-storybook":"storybook build"},"dependencies":{"next":"15.5.28","react":"19.2.0","react-dom":"19.2.0"},"devDependencies":{"@storybook/nextjs-vite":"10.6.5","storybook":"10.6.5","vite":"7.1.12"}}

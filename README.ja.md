@@ -329,6 +329,8 @@ scripts/codex-metrics .codex-runs/task.jsonl
 
 管理者設定、初回 staging、バージョン選択、タグ公開、失敗時の復旧は [npm リリース用スキル](.agents/skills/storymesh-npm-release/SKILL.md) に集約しています。ビルドと公開の動作は [リリース workflow](.github/workflows/release.yml) が定義します。
 
+バージョンの一括更新は、Actions の **Prepare npm release** を `main` で実行し、`v` を付けずに `0.3.0` などを入力します。Cargo.toml、Cargo.lock、npm 全6パッケージとプラットフォーム依存のバージョンを更新し、検証後に `release/vVERSION` ブランチへコミット・pushします。そのブランチから PR を作成し、CI 成功後にマージして、マージ済みコミットに `vVERSION` タグを付けてください。既存タグ・同名ブランチは拒否します。この workflow はタグ作成や公開を行いません。Actions に contents の書き込みを許可する必要があります。各 PR・main push の CI でバージョン整合性を明示的に検査し、タグのリリース時にはタグとの一致も検査します。全定義が古いバージョンで揃っている場合に、機能変更から更新の必要性を判定するものではありません。
+
 ### 依存関係の更新
 
 依存関係の更新 PR は Renovate で管理します。リポジトリ管理者は

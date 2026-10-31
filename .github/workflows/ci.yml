@@ -13,6 +13,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+      - name: Check Cargo and npm version synchronization
+        run: node scripts/check-npm-version.mjs
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy

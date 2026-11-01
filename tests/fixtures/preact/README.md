@@ -19,3 +19,8 @@ Verified with Preact 10.27.2, Storybook and @storybook/preact-vite 10.6.5,
 Vite 7.1.12 and Node 26.12.1. The `viteFinal` configuration selects Preact's
 JSX runtime; without it this standalone fixture's JSX compiles to React calls.
 This checks simple default and named exports only, not provider-dependent components.
+
+The Card source uses an export list with the component after a helper. The
+repository harness regenerates stories in a temporary copy, builds Storybook
+and checks Default entries: `mise run fixture-check`. Install each guarded
+fixture's dependencies before running it. This gate does not render a browser.

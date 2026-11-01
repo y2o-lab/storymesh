@@ -189,7 +189,7 @@ pub(crate) fn story_skeleton(
     let import_path = escape_javascript_string(&format!("./{import_stem}"));
     let import = match framework {
         Framework::React | Framework::Preact | Framework::Solid | Framework::Qwik => {
-            let import = jsx_import(root, component, &import_path, framework != Framework::React)?;
+            let import = jsx_import(root, component, &import_path)?;
             if framework != Framework::React && import.is_none() {
                 return Err(GenerateError::invalid_component(
                     component,
@@ -251,7 +251,6 @@ fn jsx_import(
     root: &Path,
     component: &Path,
     import_path: &str,
-    strict: bool,
 ) -> Result<Option<String>, GenerateError> {
     let absolute_path = root.join(component);
     let source = fs::read(&absolute_path)
@@ -262,15 +261,7 @@ fn jsx_import(
 
     let component_name = component_name(component);
     let export_name = pascal_case_identifier(component_name);
-    if export_name.is_empty()
-        || !(if strict {
-            contains_named_declaration(&source, &export_name)
-                || contains_export_specifier(&javascript_tokens(&source), export_name.as_bytes())
-        } else {
-            contains_named_export(&source, &export_name)
-                || contains_export_specifier(&javascript_tokens(&source), export_name.as_bytes())
-        })
-    {
+    if export_name.is_empty() || !contains_named_export(&source, &export_name) {
         return Ok(None);
     }
     Ok(Some(format!(
@@ -324,22 +315,8 @@ fn contains_export_specifier(tokens: &[&[u8]], export_name: &[u8]) -> bool {
 }
 
 fn contains_named_export(source: &[u8], export_name: &str) -> bool {
-    let identifiers = javascript_identifiers(source);
-    let export_name = export_name.as_bytes();
-    identifiers.windows(3).any(|tokens| {
-        tokens[0] == b"export"
-            && matches!(
-                tokens[1],
-                b"function" | b"class" | b"const" | b"let" | b"var"
-            )
-            && tokens[2] == export_name
-    }) || identifiers.windows(4).any(|tokens| {
-        tokens[0] == b"export"
-            && ((tokens[1] == b"async" && tokens[2] == b"function") || tokens[2] == b"as")
-            && tokens[3] == export_name
-    }) || identifiers
-        .windows(2)
-        .any(|tokens| tokens[0] == b"export" && tokens[1] == export_name)
+    contains_named_declaration(source, export_name)
+        || contains_export_specifier(&javascript_tokens(source), export_name.as_bytes())
 }
 
 fn javascript_identifiers(source: &[u8]) -> Vec<&[u8]> {

@@ -134,9 +134,9 @@ Card.stories.tsx
 
 With `--generate`, the exit code indicates whether generation succeeded rather than whether stories were missing. It returns `0` if generation succeeds, including when there is nothing to generate, or `2` if generation fails. Running `check` again counts the generated stories as covered. Existing files are never overwritten.
 
-React stories use the component's extension (for example, `Button.tsx` → `Button.stories.tsx`); Vue, Svelte, and Angular stories use `.stories.ts`. For React, the generator recognizes default exports and common named exports matching the filename. If it cannot find an importable export, it creates a `render: () => null` placeholder you can edit in Storybook. Vue and Svelte use default imports with the component file extension, and Angular recognizes default exports or assumes a conventional named class (for example, `user-card.component.ts` → `UserCardComponent`). Adjust the generated imports if your project's exports differ.
+React stories use the component's extension (for example, `Button.tsx` → `Button.stories.tsx`); Vue, Svelte, and Angular stories use `.stories.ts`. For React, the generator recognizes default exports and common named exports matching the filename. If it cannot find an importable export, it creates a `render: () => null` placeholder you can edit in Storybook. Vue and Svelte use default imports with the component file extension, and Angular prefers a matching conventional named class, otherwise recognizes default exports or assumes a conventional named class (for example, `user-card.component.ts` → `UserCardComponent`). Adjust the generated imports if your project's exports differ.
 
-The `preact` mode uses the same filename rules, story matching, and story extension as React. For example, run `storymesh check src/components --framework preact --generate`. It generates imports for default exports or named declarations matching the component name; export lists and re-exports are not recognized. If neither is recognized, generation fails with an instruction to write the story manually. Export detection is heuristic, so inspect generated imports. JSX utilities can be counted as components; use `--ignore` or an ignore file to exclude them. Files with the same stem in one directory share a story match even when their extensions differ. The [Preact fixture](tests/fixtures/preact/README.md) records the versions and JSX configuration used to build and render simple generated stories; it does not establish compatibility with every Storybook configuration or component requiring providers.
+The `preact` mode uses the same filename rules, story matching, and story extension as React. For example, run `storymesh check src/components --framework preact --generate`. It generates imports for default exports, named declarations, and export-list entries matching the component name (including re-exports). Aliases are matched by their exported name: `export { helper as Card }` matches `Card`, while `export { Card as Widget }` does not. If neither is recognized, generation fails with an instruction to write the story manually. Export detection is heuristic, so inspect generated imports. JSX utilities can be counted as components; use `--ignore` or an ignore file to exclude them. Files with the same stem in one directory share a story match even when their extensions differ. The [Preact fixture](tests/fixtures/preact/README.md) records the versions and JSX configuration used to build and render simple generated stories; it does not establish compatibility with every Storybook configuration or component requiring providers.
 
 The `solid` mode uses the same filename and matching rules and the same export detection as `preact`, including its error for unrecognized exports and the limitations described above. For example, run `storymesh check src/components --framework solid --generate`. JSX utilities can be counted and should be excluded with ignore rules if needed. The [SolidJS fixture](tests/fixtures/solid/README.md) records the integration and versions used to build and render simple generated stories; provider-dependent components and other configurations are not covered by that verification.
 
@@ -344,6 +344,7 @@ mise run lint
 mise run test
 mise run check
 mise run npm-check
+mise run fixture-check  # all guarded Storybook builds; dependencies must be installed
 ```
 
 ### Codex harness
@@ -357,6 +358,23 @@ scripts/codex-metrics .codex-runs/task.jsonl
 ```
 
 Logs are ignored by Git. Compare uncached input, output, reasoning tokens, and cache-hit rates across similar tasks. The SessionStart hook reports dirty paths; the Stop hook checks verification evidence in `.codex-runs/`. Later edits invalidate that evidence. Gate selection is defined in the [handoff skill](.agents/skills/storymesh-handoff/SKILL.md).
+
+The repository-specific [review-fix skill](.agents/skills/storymesh-review-fix/SKILL.md)
+requires checking review bodies as well as inline threads, sibling framework paths,
+and documentation. Shared export tests in `tests/generation.rs` cover import and
+placeholder/error policies. Workflow credential tests parse Actions YAML and reject
+persisted checkout credentials or token environment variables on known validation,
+build, install and commit commands; this is a focused guard, not a full security audit.
+
+`mise run verify` also selects Storybook builds for Preact, Solid, Qwik and Analog
+when scanner/generator or CLI code, framework definitions, Cargo manifests, generation tests, their fixtures, or the build harness
+changes. Builds run in temporary copies and check generated Default entries in the
+built index; browser rendering is outside this gate. Install fixture dependencies
+with `mise exec -- npm ci --prefix tests/fixtures/NAME`. Missing dependencies fail
+with that command. `mise run fixture-check` builds all four explicitly. CI uses the
+PR base (or previous push revision); local checks compare HEAD plus worktree changes.
+Documentation-only changes retain the fast harness gate. The Stop hook checks the
+same handoff evidence and performs no network requests itself.
 
 ### npm releases
 

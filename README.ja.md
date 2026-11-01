@@ -129,6 +129,8 @@ Card.stories.tsx
 
 React はコンポーネントと同じ拡張子（例: `Button.tsx` → `Button.stories.tsx`）、Vue、Svelte、Angular は `.stories.ts` を生成します。React は default export と、ファイル名に対応する一般的な named export を判別します。import 可能な export が見つからない場合は、Storybook 上で編集を始められる `render: () => null` のプレースホルダーを生成します。Vue と Svelte は拡張子付きパスからの default import、Angular は default export、または一般的な named export のクラス名（例: `user-card.component.ts` → `UserCardComponent`）を前提とするため、プロジェクトの export が異なる場合は生成後に import を調整してください。
 
+Preact・Solid・Qwik は default export、コンポーネント名に一致する named export 宣言と export リスト（再エクスポートを含む）から import を生成します。`export { helper as Card }` は `Card` に一致し、`export { Card as Widget }` は一致しません。認識できない場合は生成をエラーにします。React は認識できない場合に編集用プレースホルダーを生成します。Angular は対応する名前付きコンポーネントを優先し、なければ default import、どちらもなければファイル名から推定した名前を使います。
+
 ### `spec check` / `spec init` / `spec import`
 
 UI 状態の要求を YAML に宣言し、Storybook が登録した Story と照合できます。従来の `check` は story **ファイル**の有無を調べますが、`spec check` は Storybook の `index.json` にある Story entry を調べます。Storybook を使うプロジェクトで、その checkout から index を毎回生成してください。
@@ -336,3 +338,7 @@ scripts/codex-metrics .codex-runs/task.jsonl
 依存関係の更新 PR は Renovate で管理します。リポジトリ管理者は
 [Renovate GitHub App](https://github.com/apps/renovate) をこのリポジトリにインストールしてください。
 設定は [renovate.json](renovate.json) にあり、Rust（Cargo）、npm、GitHub Actions の更新を検出します。
+
+### リポジトリ専用の検証ハーネス
+
+[レビュー修正skill](.agents/skills/storymesh-review-fix/SKILL.md)は、レビュー本文とインライン指摘の両方、関連フレームワーク、ドキュメントの整合性を確認します。`mise run verify` は共通exportテスト、Actionsの認証情報チェック、変更に応じたPreact・Solid・Qwik・AnalogのStorybookビルドを実行します。`mise run fixture-check` は4つすべてをビルドします。依存関係は `mise exec -- npm ci --prefix tests/fixtures/NAME` で準備してください。生成とビルドは一時コピーで行い、Default entryの登録を検証します。ブラウザー描画はこのゲートの対象外です。既存のStop hookが検証記録を確認し、ドキュメントだけの変更は軽量なハーネス検証を維持します。

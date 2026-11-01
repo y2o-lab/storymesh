@@ -1,0 +1,4 @@
+node_modules/
+.expo/
+dist/
+.rnstorybook/storybook.requires.ts

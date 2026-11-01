@@ -1,0 +1,7 @@
+version: 1
+component:
+  id: card
+  name: Card
+  title: Components/Card
+stories:
+  - id: default

@@ -127,7 +127,7 @@ Card.stories.tsx
 
 `--generate` 指定時は missing の有無ではなく生成処理の成否を終了コードで示します。すべて生成できた場合（生成対象がない場合を含む）は `0`、生成に失敗した場合は `2` です。生成した story を含めて再度 `check` すると coverage 済みとして扱われます。既存ファイルは上書きしません。
 
-React はコンポーネントと同じ拡張子（例: `Button.tsx` → `Button.stories.tsx`）、Vue、Svelte、Angular は `.stories.ts` を生成します。React は default export と、ファイル名に対応する一般的な named export を判別します。import 可能な export が見つからない場合は、Storybook 上で編集を始められる `render: () => null` のプレースホルダーを生成します。Vue と Svelte は拡張子付きパスからの default import、Angular は一般的なクラス名（例: `user-card.component.ts` → `UserCardComponent`）を前提とするため、プロジェクトの export が異なる場合は生成後に import を調整してください。
+React はコンポーネントと同じ拡張子（例: `Button.tsx` → `Button.stories.tsx`）、Vue、Svelte、Angular は `.stories.ts` を生成します。React は default export と、ファイル名に対応する一般的な named export を判別します。import 可能な export が見つからない場合は、Storybook 上で編集を始められる `render: () => null` のプレースホルダーを生成します。Vue と Svelte は拡張子付きパスからの default import、Angular は default export、または一般的な named export のクラス名（例: `user-card.component.ts` → `UserCardComponent`）を前提とするため、プロジェクトの export が異なる場合は生成後に import を調整してください。
 
 ### `spec check` / `spec init` / `spec import`
 
@@ -328,6 +328,8 @@ scripts/codex-metrics .codex-runs/task.jsonl
 ### npm リリース
 
 管理者設定、初回 staging、バージョン選択、タグ公開、失敗時の復旧は [npm リリース用スキル](.agents/skills/storymesh-npm-release/SKILL.md) に集約しています。ビルドと公開の動作は [リリース workflow](.github/workflows/release.yml) が定義します。
+
+バージョンの一括更新は、Actions の **Prepare npm release** を `main` で実行し、`v` を付けずに `0.3.0` などを入力します。Cargo.toml、Cargo.lock、npm 全6パッケージとプラットフォーム依存のバージョンを更新し、検証後に `release/vVERSION` ブランチへコミット・pushします。そのブランチから PR を作成し、CI 成功後にマージして、マージ済みコミットに `vVERSION` タグを付けてください。既存タグ・同名ブランチは拒否します。この workflow はタグ作成や公開を行いません。Actions に contents の書き込みを許可する必要があります。各 PR・main push の CI でバージョン整合性を明示的に検査し、タグのリリース時にはタグとの一致も検査します。全定義が古いバージョンで揃っている場合に、機能変更から更新の必要性を判定するものではありません。
 
 ### 依存関係の更新
 

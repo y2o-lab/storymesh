@@ -1,0 +1,1 @@
+{"private":true,"type":"module","scripts":{"build-storybook":"storybook build"},"dependencies":{"@tanstack/react-router":"1.170.46","react":"19.2.0","react-dom":"19.2.0"},"devDependencies":{"@storybook/tanstack-react":"10.6.5","@vitejs/plugin-react":"5.2.0","storybook":"10.6.5","vite":"7.1.12"}}

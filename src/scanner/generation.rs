@@ -268,6 +268,7 @@ fn jsx_import(
                 || contains_export_specifier(&javascript_tokens(&source), export_name.as_bytes())
         } else {
             contains_named_export(&source, &export_name)
+                || contains_export_specifier(&javascript_tokens(&source), export_name.as_bytes())
         })
     {
         return Ok(None);

@@ -212,7 +212,12 @@ fn solid_rejects_unknown_exports_without_generating_a_placeholder() {
 
 #[test]
 fn jsx_frameworks_generate_stories_for_matching_export_specifiers() {
-    for framework in [Framework::Preact, Framework::Solid, Framework::Qwik] {
+    for framework in [
+        Framework::React,
+        Framework::Preact,
+        Framework::Solid,
+        Framework::Qwik,
+    ] {
         for exports in [
             "export { Card };",
             "export { helper, /* component */ Card, };",

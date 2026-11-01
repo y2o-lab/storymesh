@@ -211,6 +211,30 @@ fn solid_rejects_unknown_exports_without_generating_a_placeholder() {
 }
 
 #[test]
+fn jsx_frameworks_generate_stories_for_matching_export_specifiers() {
+    for framework in [Framework::Preact, Framework::Solid, Framework::Qwik] {
+        for exports in [
+            "export { Card };",
+            "export { helper, /* component */ Card, };",
+            "export { Card as Card };",
+            "export { helper as Card };",
+        ] {
+            let project = TestProject::new();
+            project.add_with_contents(
+                "Card.tsx",
+                &format!("const Card = () => null; const helper = Card; {exports}\n"),
+            );
+            let report = scan(&project.root, framework).expect("scan");
+            let generated = generate_story_skeletons(&project.root, &report).expect("generate");
+            assert_eq!(generated, [PathBuf::from("Card.stories.tsx")]);
+            let story =
+                fs::read_to_string(project.root.join("Card.stories.tsx")).expect("read story");
+            assert!(story.starts_with("import { Card as Component } from './Card';"));
+        }
+    }
+}
+
+#[test]
 fn jsx_frameworks_reject_unrecognized_aliased_exports() {
     for framework in [Framework::Preact, Framework::Solid, Framework::Qwik] {
         let p = TestProject::new();

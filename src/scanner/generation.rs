@@ -265,6 +265,7 @@ fn jsx_import(
     if export_name.is_empty()
         || !(if strict {
             contains_named_declaration(&source, &export_name)
+                || contains_export_specifier(&javascript_tokens(&source), export_name.as_bytes())
         } else {
             contains_named_export(&source, &export_name)
         })
@@ -296,22 +297,26 @@ fn contains_named_declaration(source: &[u8], export_name: &str) -> bool {
 
 fn contains_default_export(source: &[u8]) -> bool {
     let tokens = javascript_tokens(source);
+    tokens
+        .windows(2)
+        .any(|tokens| tokens[0] == b"export" && tokens[1] == b"default")
+        || contains_export_specifier(&tokens, b"default")
+}
+
+fn contains_export_specifier(tokens: &[&[u8]], export_name: &[u8]) -> bool {
     tokens.iter().enumerate().any(|(index, token)| {
         if *token != b"export" {
             return false;
         }
         let remaining = &tokens[index + 1..];
-        if remaining.first() == Some(&b"default".as_slice()) {
-            return true;
-        }
         if remaining.first() != Some(&b"{".as_slice()) {
             return false;
         }
         let end = remaining.iter().position(|token| *token == b"}");
         end.is_some_and(|end| {
             remaining[1..end].split(|token| *token == b",").any(|specifier| {
-                matches!(specifier, [name] if *name == b"default")
-                    || matches!(specifier, [_, alias, name] if *alias == b"as" && *name == b"default")
+                matches!(specifier, [name] if *name == export_name)
+                    || matches!(specifier, [_, alias, name] if *alias == b"as" && *name == export_name)
             })
         })
     })

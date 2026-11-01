@@ -3,7 +3,7 @@ import { cpSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, sym
 import { tmpdir } from 'node:os';
 import { basename, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { fixtures, selectFixtures } from './fixture-plan.mjs';
+import { fixtures, selectFixtures, verifyExpectedStories } from './fixture-plan.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const args = process.argv.slice(2);
@@ -57,14 +57,15 @@ try {
       run(join(resolve(root, process.env.CARGO_TARGET_DIR || 'target'), `debug/storymesh${process.platform === 'win32' ? '.exe' : ''}`), ['check', join(temporary, 'src'), '--framework', fixtures[name], '--generate']);
       run('mise', ['exec', '--', 'npm', 'run', 'build-storybook', '--', '--output-dir', 'storybook-static'], temporary);
       const entries = Object.values(JSON.parse(readFileSync(join(temporary, 'storybook-static/index.json'), 'utf8')).entries);
-      let storyCount = 0;
+      const storyPaths = [];
       function verifyStories(directory) {
         for (const entry of readdirSync(directory, { withFileTypes: true })) {
           const path = join(directory, entry.name);
           if (entry.isDirectory()) verifyStories(path);
           else if (/\.stories\.[^.]+$/.test(entry.name)) {
-            storyCount++;
-            const importPath = `./${relative(temporary, path).split('\\').join('/')}`;
+            const storyPath = relative(temporary, path).split('\\').join('/');
+            storyPaths.push(storyPath);
+            const importPath = `./${storyPath}`;
             if (!entries.some(story => story.type === 'story' && story.importPath === importPath && story.id.endsWith('--default'))) {
               throw new Error(`${name}: generated story ${path} has no Default entry in the built Storybook index`);
             }
@@ -72,7 +73,7 @@ try {
         }
       }
       verifyStories(join(temporary, 'src'));
-      if (storyCount === 0) throw new Error(`${name}: no generated stories were checked`);
+      verifyExpectedStories(name, storyPaths);
       console.log(`Verified ${name}: generated stories build and register Default entries.`);
     } finally {
       rmSync(temporary, { recursive: true, force: true });

@@ -21,3 +21,8 @@ optimizer and JSX configuration are required for rendering; a successful build
 without them produced an empty canvas. The root module satisfies the optimizer
 and is excluded from the component scan. This covers simple `component$` default
 and named exports, not components requiring Qwik City context or other providers.
+
+The Card source uses an export list with the component after a helper. The
+repository harness regenerates stories in a temporary copy, builds Storybook
+and checks Default entries: `mise run fixture-check`. Install each guarded
+fixture's dependencies before running it. This gate does not render a browser.

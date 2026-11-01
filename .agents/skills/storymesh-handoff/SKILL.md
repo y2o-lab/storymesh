@@ -23,6 +23,12 @@ description: Select and run the smallest valid Storymesh verification gate from 
    This runs `mise run harness` for documentation and prompt-only diffs, and
    `mise run verify` for Rust, configuration, CI, hook, or script diffs. It records
    evidence only when the gate succeeds and the worktree fingerprint stays unchanged.
+   The verify gate includes workflow credential tests and changed Storybook fixture
+   builds. Prepare missing fixture dependencies using the runner's reported `npm ci`
+   command; a missing dependency or failed build is not a passing handoff. To build
+   every guarded fixture explicitly, use `mise run fixture-check`. CI sets
+   `STORYMESH_FIXTURE_BASE` to include committed PR changes; local selection compares
+   HEAD and the worktree. Browser rendering is not included.
 5. If the gate fails, fix the cause and rerun it. Never describe an unexecuted gate as
    passing.
 6. Review `git diff --check`, `git diff --stat`, and the final diff. Report the selected

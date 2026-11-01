@@ -20,6 +20,8 @@ not a running Analog application, file routing, SSR, providers, loaders or
 other versions. Remove generated stories before repeating.
 
 The default-exported `index.page.ts` is detected and generation now uses a
-default import. CLI and generation regression tests cover this import; the
-Storybook build and browser rendering above were verified only for the component
+default import. CLI and generation regression tests cover this import. The repository
+harness (`mise run fixture-check`) also generates stories for the entire `src`
+directory, builds them in a temporary copy and checks Default index entries,
+including the page. Browser rendering above was verified only for the component
 directory. The aliased `@NgComponent` in `alias.ts` is not detected.

@@ -74,6 +74,13 @@ If a check cannot run, report the exact command and reason.
 - Ask one focused question only when repository evidence cannot resolve a material
   ambiguity; otherwise state a safe assumption and proceed.
 
+## Review fixes
+
+Use `.agents/skills/storymesh-review-fix/SKILL.md` when addressing review findings.
+Check review bodies as well as inline threads; export changes need the shared
+framework matrix and a README consistency review. `mise run verify` selects
+Storybook fixture builds; missing fixture dependencies fail with setup instructions.
+
 ## Handoff
 
 Report: outcome, key files changed, checks run, and any remaining risk or follow-up.

@@ -39,6 +39,14 @@ run = [
   "node scripts/check-npm-packages.mjs",
 ]
 
+[tasks.fixture-check]
+description = "Build generated stories in every guarded Storybook fixture"
+run = "node scripts/check-fixture-builds.mjs"
+
+[tasks.fixture-check-changed]
+description = "Build only Storybook fixtures affected by the current diff"
+run = "node scripts/check-fixture-builds.mjs --changed"
+
 [tasks.quick]
 description = "Run the fast edit-loop checks"
 run = [
@@ -54,4 +62,5 @@ run = [
   "cargo clippy --all-targets --all-features -- -D warnings",
   "cargo test --all-features",
   "mise run npm-check",
+  "mise run fixture-check-changed",
 ]

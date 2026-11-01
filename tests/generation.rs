@@ -116,6 +116,79 @@ fn generates_framework_specific_story_skeletons_without_overwriting() {
 }
 
 #[test]
+fn angular_prefers_the_matching_named_component_over_a_default_export() {
+    let project = TestProject::new();
+    project.add_with_contents(
+        "src/user-card.component.ts",
+        "export class UserCardComponent {}\nexport default [];\n",
+    );
+    let report = scan(&project.root, Framework::Angular).expect("the project should scan");
+    generate_story_skeletons(&project.root, &report).expect("the story should generate");
+    let story = fs::read_to_string(project.root.join("src/user-card.component.stories.ts"))
+        .expect("the story should read");
+    assert!(
+        story
+            .starts_with("import { UserCardComponent as Component } from './user-card.component';")
+    );
+}
+
+#[test]
+fn generation_distinguishes_default_exports_from_named_reexports() {
+    for framework in [
+        Framework::React,
+        Framework::Preact,
+        Framework::Solid,
+        Framework::Qwik,
+        Framework::Angular,
+    ] {
+        for (exports, default_import) in [
+            ("export { default as Other } from './other';", false),
+            ("export { default as Other, value } from './other';", false),
+            ("export { default } from './other';", true),
+            ("export { Other as default } from './other';", true),
+            ("export { value, Other as default, } from './other';", true),
+            ("export /* comment */ default class {}", true),
+        ] {
+            let project = TestProject::new();
+            let (component, story, import_path, declaration) = if framework == Framework::Angular {
+                (
+                    "src/index.page.ts",
+                    "src/index.page.stories.ts",
+                    "./index.page",
+                    "@Component({}) class Page {}",
+                )
+            } else {
+                (
+                    "src/Card.tsx",
+                    "src/Card.stories.tsx",
+                    "./Card",
+                    "export function Card() {}",
+                )
+            };
+            project.add_with_contents(component, &format!("{exports}\n{declaration}\n"));
+            let report = scan(&project.root, framework).expect("the project should scan");
+            generate_story_skeletons(&project.root, &report).expect("the story should generate");
+            let contents =
+                fs::read_to_string(project.root.join(story)).expect("the story should read");
+            let expected = if default_import {
+                format!("import Component from '{import_path}';")
+            } else {
+                let name = if framework == Framework::Angular {
+                    "IndexPage"
+                } else {
+                    "Card"
+                };
+                format!("import {{ {name} as Component }} from '{import_path}';")
+            };
+            assert!(
+                contents.starts_with(&expected),
+                "{framework:?}: {exports}\n{contents}"
+            );
+        }
+    }
+}
+
+#[test]
 fn preact_rejects_unknown_exports_before_writing_any_stories() {
     let project = TestProject::new();
     project.add_with_contents("src/Button.tsx", "export default function Button() {}\n");

@@ -206,13 +206,13 @@ pub(crate) fn story_skeleton(
             let source = fs::read(&absolute_path).map_err(|error| {
                 GenerateError::io("read Angular component", &absolute_path, error)
             })?;
-            if contains_default_export(&source) {
-                Some(format!("import Component from '{import_path}';"))
-            } else {
-                let export_name = angular_export_name(stem);
+            let export_name = angular_export_name(stem);
+            if contains_named_export(&source, &export_name) || !contains_default_export(&source) {
                 Some(format!(
                     "import {{ {export_name} as Component }} from '{import_path}';"
                 ))
+            } else {
+                Some(format!("import Component from '{import_path}';"))
             }
         }
         Framework::WebComponents => {
@@ -295,9 +295,26 @@ fn contains_named_declaration(source: &[u8], export_name: &str) -> bool {
 }
 
 fn contains_default_export(source: &[u8]) -> bool {
-    javascript_identifiers(source)
-        .windows(2)
-        .any(|tokens| tokens[0] == b"export" && tokens[1] == b"default")
+    let tokens = javascript_tokens(source);
+    tokens.iter().enumerate().any(|(index, token)| {
+        if *token != b"export" {
+            return false;
+        }
+        let remaining = &tokens[index + 1..];
+        if remaining.first() == Some(&b"default".as_slice()) {
+            return true;
+        }
+        if remaining.first() != Some(&b"{".as_slice()) {
+            return false;
+        }
+        let end = remaining.iter().position(|token| *token == b"}");
+        end.is_some_and(|end| {
+            remaining[1..end].split(|token| *token == b",").any(|specifier| {
+                matches!(specifier, [name] if *name == b"default")
+                    || matches!(specifier, [_, alias, name] if *alias == b"as" && *name == b"default")
+            })
+        })
+    })
 }
 
 fn contains_named_export(source: &[u8], export_name: &str) -> bool {
@@ -320,6 +337,13 @@ fn contains_named_export(source: &[u8], export_name: &str) -> bool {
 }
 
 fn javascript_identifiers(source: &[u8]) -> Vec<&[u8]> {
+    javascript_tokens(source)
+        .into_iter()
+        .filter(|token| token[0].is_ascii_alphabetic() || matches!(token[0], b'_' | b'$'))
+        .collect()
+}
+
+fn javascript_tokens(source: &[u8]) -> Vec<&[u8]> {
     #[derive(Clone, Copy)]
     enum State {
         Code,
@@ -359,6 +383,9 @@ fn javascript_identifiers(source: &[u8]) -> Vec<&[u8]> {
                     }
                     identifiers.push(&source[start..index]);
                     continue;
+                }
+                if !source[index].is_ascii_whitespace() {
+                    identifiers.push(&source[index..index + 1]);
                 }
             }
             State::LineComment => {

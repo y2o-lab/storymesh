@@ -18,6 +18,9 @@ for file in \
   .agents/skills/storymesh-handoff/agents/openai.yaml \
   .agents/skills/storymesh-handoff/scripts/check-change \
   scripts/codex-task \
+  scripts/check-fixture-builds.mjs \
+  scripts/fixture-plan.mjs \
+  .agents/skills/storymesh-review-fix/SKILL.md \
   scripts/codex-metrics; do
   if [[ -s "$file" ]]; then
     pass "$file exists"
@@ -110,6 +113,7 @@ cp .agents/skills/storymesh-handoff/scripts/check-change \
   "$fixture/.agents/skills/storymesh-handoff/scripts/check-change"
 cp .codex/hooks/session-context .codex/hooks/stop-quality-gate \
   "$fixture/.codex/hooks/"
+printf '.codex-runs/\nbin/\n' > "$fixture/.gitignore"
 printf '# fixture\n' > "$fixture/README.md"
 git -C "$fixture" init --quiet
 git -C "$fixture" add .
@@ -163,6 +167,36 @@ if jq -e '. == {}' >/dev/null <<<"$stop_active_output"; then
   pass "Stop hook prevents continuation loops"
 else
   fail "Stop hook continuation guard"
+fi
+
+# Use a local fake gate to test evidence handling without recursively running verify.
+mkdir -p "$fixture/bin"
+printf '#!/usr/bin/env bash\nexit 1\n' > "$fixture/bin/mise"
+chmod +x "$fixture/bin/mise"
+if (cd "$fixture" && PATH="$fixture/bin:$PATH" .agents/skills/storymesh-handoff/scripts/check-change --run) >/dev/null 2>&1; then
+  fail "failed gate must fail handoff"
+elif [[ -e "$fixture/.codex-runs/handoff.json" ]]; then
+  fail "failed gate recorded verification evidence"
+else
+  pass "failed gate cannot record verification evidence"
+fi
+printf '#!/usr/bin/env bash\n[[ "$*" == "run verify" ]]\n' > "$fixture/bin/mise"
+if (cd "$fixture" && PATH="$fixture/bin:$PATH" .agents/skills/storymesh-handoff/scripts/check-change --run) >/dev/null; then
+  verified_output="$(jq -n --arg cwd "$fixture" '{cwd: $cwd}' | "$fixture/.codex/hooks/stop-quality-gate")"
+  if jq -e '. == {}' >/dev/null <<<"$verified_output"; then
+    pass "Stop hook accepts successful evidence for current changes"
+  else
+    fail "Stop hook rejected current evidence"
+  fi
+  printf '\n// later change\n' >> "$fixture/src/main.rs"
+  stale_output="$(jq -n --arg cwd "$fixture" '{cwd: $cwd}' | "$fixture/.codex/hooks/stop-quality-gate")"
+  if jq -e '.decision == "block"' >/dev/null <<<"$stale_output"; then
+    pass "Stop hook rejects evidence after subsequent edits"
+  else
+    fail "Stop hook accepted stale evidence"
+  fi
+else
+  fail "successful gate evidence fixture"
 fi
 
 metrics_fixture='{"type":"turn.completed","usage":{"input_tokens":100,"cached_input_tokens":75,"output_tokens":20,"reasoning_output_tokens":5}}'

@@ -13,6 +13,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
       - uses: actions/setup-node@v7
         with:
           node-version: 26
@@ -25,4 +28,7 @@ jobs:
       - name: Install mise
         uses: jdx/mise-action@v5
       - name: Verify
+        env:
+          STORYMESH_FIXTURE_INSTALL: '1'
+          STORYMESH_FIXTURE_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: mise run verify

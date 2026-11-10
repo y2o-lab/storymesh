@@ -255,6 +255,42 @@ fn jsx_frameworks_reject_unrecognized_aliased_exports() {
 }
 
 #[test]
+fn jsx_export_policy_rejects_nonmatching_exports_and_ignores_examples() {
+    for framework in [
+        Framework::React,
+        Framework::Preact,
+        Framework::Solid,
+        Framework::Qwik,
+    ] {
+        for source in [
+            "const Card = () => null; export { Card as Widget };",
+            "const Card = () => null; const helper = Card; export { helper, Card as Widget };",
+            "// export { Card };\nconst example = 'export { Card }'; export const Other = () => null;",
+        ] {
+            let project = TestProject::new();
+            project.add_with_contents("Card.tsx", source);
+            let report = scan(&project.root, framework).expect("scan");
+            let result = generate_story_skeletons(&project.root, &report);
+            let story = project.root.join("Card.stories.tsx");
+            if framework == Framework::React {
+                result.expect("React permits an editable placeholder");
+                let contents = fs::read_to_string(story).expect("read placeholder");
+                assert!(contents.contains("render: () => null"));
+                assert!(!contents.contains("import "));
+            } else {
+                assert!(
+                    result
+                        .expect_err("unrecognized export")
+                        .to_string()
+                        .contains("write the story manually")
+                );
+                assert!(!story.exists());
+            }
+        }
+    }
+}
+
+#[test]
 fn react_platform_suffix_affects_named_export_guess() {
     let p = TestProject::new();
     p.add_with_contents("Button.web.tsx", "export function Button() {}\n");

@@ -1,6 +1,6 @@
 [tools]
 node = "26"
-ripgrep = "15.2.0"
+ripgrep = "16.0.0"
 rust = "stable"
 
 [env]
